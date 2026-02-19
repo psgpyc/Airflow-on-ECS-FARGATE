@@ -60,3 +60,85 @@ variable "sec_group_config" {
   }))
   
 }
+
+
+# ALB
+
+variable "alb_name" {
+  type = string
+  nullable = false
+
+}
+
+variable "is_internal" {
+
+    type = bool
+    default = false
+    
+}
+
+variable "load_balancer_type" {
+    type = string
+    nullable = false
+    default = "application"
+}
+
+variable "idle_timeout" {
+
+    type = string
+    default = 60
+  
+}
+
+
+variable "is_access_log_enabled" {
+  description = "Enable ALB access logs to S3."
+  type        = bool
+  default     = false
+}
+
+# TARGET GROUP
+
+variable "target_g_port" {
+  description = "Port the load balancer uses when routing traffic to targets."
+  type        = number
+  default = 8080
+
+  validation {
+    condition     = var.target_g_port >= 1 && var.target_g_port <= 65535
+    error_message = "target_g_port must be a valid TCP/UDP port (1-65535)."
+  }
+}
+
+variable "target_g_protocol" {
+  description = "Protocol for routing traffic to targets. Common values: HTTP, HTTPS."
+  type        = string
+  default     = "HTTP"
+
+  validation {
+    condition     = contains(["HTTP", "HTTPS"], upper(trimspace(var.target_g_protocol)))
+    error_message = "target_g_protocol must be one of: HTTP, HTTPS."
+  }
+}
+
+variable "target_type" {
+  description = "Target type for the target group. For ECS Fargate use 'ip'."
+  type        = string
+  default     = "ip"
+
+  validation {
+    condition     = contains(["ip", "instance", "lambda"], lower(trimspace(var.target_type)))
+    error_message = "target_type must be one of: ip, instance, lambda."
+  }
+}
+
+variable "health_check_path" {
+  description = "HTTP path used for target group health checks."
+  type        = string
+  default     = "/api/v2/monitor/health"
+
+  validation {
+    condition     = startswith(var.health_check_path, "/")
+    error_message = "health_check_path must start with '/'."
+  }
+}
