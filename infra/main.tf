@@ -153,16 +153,17 @@ resource "aws_vpc_security_group_ingress_rule" "rds_from_airflow_worker" {
 module "alb" {
 
     source = "./modules/alb"
+    name = var.alb_name
 
+    # false
     is_internal = var.is_internal
 
+    # application
     load_balancer_type = var.load_balancer_type   
 
     idle_timeout = var.idle_timeout
 
     is_access_log_enabled = var.is_access_log_enabled
-
-    name = var.alb_name
 
     security_groups = [module.security_groups["alb_public"].security_group_id]
 

@@ -2,6 +2,8 @@ resource "aws_lb" "this" {
 
     name = "${var.name}-lb"
     internal = var.is_internal
+
+    # application / network / classic ? Here only application is allowed.
     load_balancer_type = var.load_balancer_type
 
     security_groups = var.security_groups
@@ -18,6 +20,7 @@ resource "aws_lb" "this" {
 
 
     dynamic "access_logs" {
+
         for_each = var.is_access_log_enabled ? [1]: []
 
         content {
@@ -40,9 +43,14 @@ resource "aws_lb" "this" {
 resource "aws_lb_target_group" "this" {
 
     name = "${var.name}-target-group"
+
+    # port and protocol used by ALB when sending traffic to target
     port = var.target_g_port
     protocol = var.target_g_protocol
+
+    # "ip" for fargate, "instance" for ec2
     target_type = var.target_type
+
     vpc_id = var.target_g_vpc_id
 
 
@@ -68,6 +76,8 @@ resource "aws_lb_target_group" "this" {
 resource "aws_lb_listener" "http" {
 
     load_balancer_arn = aws_lb.this.arn
+
+    # ALB listened on port 80
     port = 80
     protocol = "HTTP"
 
