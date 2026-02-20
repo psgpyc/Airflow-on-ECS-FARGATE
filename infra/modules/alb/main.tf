@@ -3,7 +3,6 @@ resource "aws_lb" "this" {
     name = "${var.name}-lb"
     internal = var.is_internal
 
-    # application / network / classic ? Here only application is allowed.
     load_balancer_type = var.load_balancer_type
 
     security_groups = var.security_groups
@@ -77,7 +76,7 @@ resource "aws_lb_listener" "http" {
 
     load_balancer_arn = aws_lb.this.arn
 
-    # ALB listened on port 80
+    # ALB listened on port 80 and uses HTTP. 
     port = 80
     protocol = "HTTP"
 

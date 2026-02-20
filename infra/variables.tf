@@ -142,3 +142,48 @@ variable "health_check_path" {
     error_message = "health_check_path must start with '/'."
   }
 }
+
+# RDS
+
+# variables.tf (root / outer)
+
+variable "db_subnet_group_name" {
+  type        = string
+  description = "Name for the RDS DB subnet group (passed to the rds module)."
+}
+
+variable "db_subnet_group_description" {
+  type        = string
+  description = "Description for the RDS DB subnet group."
+}
+
+variable "pg_instance_class" {
+  type        = string
+  description = "RDS PostgreSQL instance class (e.g., db.t4g.micro)."
+}
+
+variable "pg_engine_version" {
+  type        = string
+  description = "PostgreSQL engine version for RDS (e.g., 16.3, 15.7)."
+}
+
+variable "pg_allocated_storage_gb" {
+  type        = number
+  description = "Allocated storage in GiB for the RDS instance."
+}
+
+variable "pg_db_name" {
+  type        = string
+  description = "Initial database name to create (e.g., airflow)."
+}
+
+variable "pg_master_username" {
+  type        = string
+  description = "Master username for the PostgreSQL DB instance."
+}
+
+variable "pg_master_password" {
+  type        = string
+  sensitive   = true
+  description = "Master password for the PostgreSQL DB instance."
+}

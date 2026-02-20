@@ -180,3 +180,31 @@ module "alb" {
 
   
 }
+
+# RDS
+
+module "rds_pg" {
+
+  source = "./modules/rds"
+
+  name = var.db_subnet_group_name
+
+  subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+
+  description = var.db_subnet_group_description
+
+  pg_instance_class = var.pg_instance_class
+
+  pg_engine_version = var.pg_engine_version
+
+  pg_allocated_storage_gb = var.pg_allocated_storage_gb
+
+  pg_db_name = var.pg_db_name
+
+  pg_master_username = var.pg_master_username
+
+  pg_master_password = var.pg_master_password
+
+  list_of_rds_security_group_ids = [module.security_groups["rds"].security_group_id]
+
+}
