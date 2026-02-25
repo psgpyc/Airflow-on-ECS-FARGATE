@@ -29,7 +29,7 @@ output "private_subnet_ids" {
 }
 
 output "subnet_ids_by_key" {
-  description = "Subnet ids keyed by your for_each keys (e.g., public_a, private_b)."
+  description = "Subnet ids keyed by for_each keys (e.g., public_a, private_b)."
   value       = { for k, s in aws_subnet.this : k => s.id }
 }
 

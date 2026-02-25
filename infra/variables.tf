@@ -187,3 +187,36 @@ variable "pg_master_password" {
   sensitive   = true
   description = "Master password for the PostgreSQL DB instance."
 }
+
+# SECRETS
+
+variable "secret_name" {
+  type        = string
+  description = "Name of the secret in Secrets Manager."
+}
+
+
+# ECR
+
+variable "ecr_name" {
+  type        = string
+  nullable    = false
+  description = "Base name used to build the ECR repository name (e.g., <name>/airflow)."
+}
+
+# IAM
+variable "ecs_task_execution_role_description" {
+
+    type = string
+    nullable = false
+  
+}
+
+# EFS
+
+variable "creation_token" {
+  description = "Unique creation token to ensure idempotent EFS file system creation."
+  type        = string
+  nullable    = false
+
+}

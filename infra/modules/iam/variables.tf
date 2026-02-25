@@ -68,7 +68,7 @@ variable "iam_role_policy" {
       condition = (
         length(trimspace(var.iam_role_policy)) > 0
         &&
-        jsonencode(var.iam_role_policy)
+        can(jsonencode(var.iam_role_policy))
       )
       error_message = "IAM role policy must be a valid JSON & cannot be empty."
     }

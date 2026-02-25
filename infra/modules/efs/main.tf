@@ -1,0 +1,66 @@
+resource "aws_efs_file_system" "this" {
+    # a unique name for efs, to ensure idempotent file system creastion
+    creation_token = var.creation_token
+
+    # sane defaults
+    encrypted = true
+    performance_mode = "generalPurpose"
+    throughput_mode = "elastic"
+
+    kms_key_id = var.kms_key_id
+
+    dynamic "lifecycle_policy" {
+        
+        for_each = var.lifecycle_policy == null ? [] : [var.lifecycle_policy]
+
+        content {
+          transition_to_archive = lifecycle_policy.value.transition_to_archive
+          transition_to_ia = lifecycle_policy.value.transition_to_ia
+        }
+      
+    }
+
+    tags = merge(var.tags, { Name = "${var.creation_token}-efs"})
+
+}
+
+
+
+resource "aws_efs_mount_target" "this" {
+
+    for_each = toset(var.mount_target_subnet_ids)
+
+    file_system_id = aws_efs_file_system.this.id
+
+    subnet_id = each.value
+
+    # must be a list in vars
+    security_groups = var.mount_target_sec_group_id
+
+}
+
+resource "aws_efs_access_point" "dags" {
+  file_system_id = aws_efs_file_system.this.id
+
+  posix_user {
+    uid = var.airflow_uid
+    gid = var.airflow_gid
+  }
+
+  root_directory {
+    path = var.dags_path
+
+    creation_info {
+      owner_uid   = var.airflow_uid
+      owner_gid   = var.airflow_gid
+      permissions = var.dags_permissions
+    }
+  }
+
+  tags = merge(var.tags, { Name = "${var.creation_token}-ap-dags" })
+
+  depends_on = [aws_efs_mount_target.this]
+}
+
+
+
