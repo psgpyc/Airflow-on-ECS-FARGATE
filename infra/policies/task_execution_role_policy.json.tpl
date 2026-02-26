@@ -36,7 +36,10 @@
           "Action": [
             "secretsmanager:GetSecretValue"
           ],
-          "Resource": "${secrets_manager_arn}"
+          "Resource": [
+                "${airflow_web_secrets_arn}",
+                "${airflow_db_secrets_arn}"
+          ]
         }
 ]
 }

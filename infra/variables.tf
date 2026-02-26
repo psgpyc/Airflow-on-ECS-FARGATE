@@ -195,6 +195,32 @@ variable "secret_name" {
   description = "Name of the secret in Secrets Manager."
 }
 
+variable "airflow_secret_name" {
+  description = "Name of the Secrets Manager secret storing Airflow admin credentials."
+  type        = string
+}
+
+variable "airflow_admin_username" {
+  description = "Initial Airflow admin username."
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.airflow_admin_username)) > 0
+    error_message = "airflow_admin_username must be a non-empty string."
+  }
+}
+
+variable "airflow_admin_password" {
+  description = "Initial Airflow admin password (sensitive)."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(trimspace(var.airflow_admin_password)) >= 0
+    error_message = "airflow_admin_password must be at least 1 characters."
+  }
+}
+
 
 # ECR
 
@@ -212,6 +238,15 @@ variable "ecs_task_execution_role_description" {
   
 }
 
+variable "ecs_task_role_description" {
+
+    type = string
+    nullable = false
+  
+}
+
+
+
 # EFS
 
 variable "creation_token" {
@@ -219,4 +254,11 @@ variable "creation_token" {
   type        = string
   nullable    = false
 
+}
+
+
+variable "volume_name" {
+  description = "Name of the task-level volume (referenced later by container mountPoints.sourceVolume)."
+  type        = string
+  default     = "airflow-efs"
 }

@@ -29,60 +29,15 @@ variable "kms_key_id" {
   default     = null
 }
 
-variable "db_host" {
-  type        = string
-  nullable    = false
-  description = "Database hostname (e.g., RDS endpoint)."
 
+variable "secret_string" {
+  type = string
+  nullable = false
+  description = "A secret json to store in vault"
+  
   validation {
-    condition     = length(trimspace(var.db_host)) > 0
-    error_message = "db_host cannot be empty."
-  }
-}
-
-variable "db_port" {
-  type        = number
-  nullable    = false
-  description = "Database port (Postgres default 5432)."
-  default     = 5432
-
-  validation {
-    condition     = var.db_port >= 1 && var.db_port <= 65535
-    error_message = "db_port must be a valid TCP port (1-65535)."
-  }
-}
-
-variable "db_name" {
-  type        = string
-  nullable    = false
-  description = "Database name."
-
-  validation {
-    condition     = length(trimspace(var.db_name)) > 0
-    error_message = "db_name cannot be empty."
-  }
-}
-
-variable "db_username" {
-  type        = string
-  nullable    = false
-  description = "Database username."
-
-  validation {
-    condition     = length(trimspace(var.db_username)) > 0
-    error_message = "db_username cannot be empty."
-  }
-}
-
-variable "db_password" {
-  type        = string
-  nullable    = false
-  sensitive   = true
-  description = "Database password."
-
-  validation {
-    condition     = length(var.db_password) >= 12
-    error_message = "db_password must be at least 12 characters."
+    condition = length(trimspace(var.secret_string)) > 0 && can(jsonencode(var.secret_string))
+    error_message = "Must be a valid json"
   }
 }
 

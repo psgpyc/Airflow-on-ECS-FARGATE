@@ -1,10 +1,3 @@
-locals {
-  sec_group_keys_without_alb_public = [
-    for k,v in var.sec_group_config: k if k != "alb_public"
-  ]
-}
-
-
 module "vpc_subnet" {
 
     source = "./modules/vpc"
@@ -189,6 +182,7 @@ resource "aws_vpc_security_group_ingress_rule" "efs_from_airflow_worker" {
   ip_protocol = "tcp"
   
 }
+
 # DEFAULT OUTBOUND 
 
 resource "aws_vpc_security_group_egress_rule" "this" {
@@ -202,8 +196,6 @@ resource "aws_vpc_security_group_egress_rule" "this" {
 
   
 }
-
-
 
 # ALB
 
@@ -268,22 +260,47 @@ module "rds_pg" {
 
 # SECRETS MANAGER
 
-module "secrets" {
+
+# db secrets
+module "secrets_db" {
 
   source = "./modules/secrets"
 
   secret_name = var.secret_name
 
-  db_host = module.rds_pg.db_endpoint
+  secret_string = jsonencode({
 
-  db_port = module.rds_pg.db_port
+    db_host = module.rds_pg.db_endpoint
+    db_port = module.rds_pg.db_port
+    db_name = module.rds_pg.db_name
+    db_username = var.pg_master_username
+    db_password = var.pg_master_password
+    sql_alchemy_conn = format(
+      "postgresql+psycopg2://%s:%s@%s:%s/%s",
+      var.pg_master_username,
+      urlencode(var.pg_master_password),
+      module.rds_pg.db_endpoint,
+      module.rds_pg.db_port,
+      module.rds_pg.db_name
+    )
 
-  db_name = module.rds_pg.db_name
+  })
+}
 
-  db_username = var.pg_master_username
+# airflow secrets
 
-  db_password = var.pg_master_password
+module "secrets_airflow" {
+  source = "./modules/secrets"
 
+  secret_name = var.airflow_secret_name
+
+  secret_string = jsonencode({
+
+    airflow_admin_username = var.airflow_admin_username
+    airflow_admin_password = var.airflow_admin_password
+
+  })
+  
 }
 
 # ECR REPOSITORY
@@ -340,8 +357,25 @@ module "ecs_task_execution_iam" {
   iam_role_policy = templatefile("./policies/task_execution_role_policy.json.tpl", {
     ecr_repo_arn = module.ecr.ecr_repo_arn
     cloudwatch_log_group_arn = aws_cloudwatch_log_group.ecs_fargate_cloudwatch_log_group.arn
-    secrets_manager_arn = module.secrets.secret_arn
+    airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+    airflow_db_secrets_arn = module.secrets_db.secret_arn
+  })
+  
+}
 
+
+module "ecs_task_role_iam" {
+
+  source = "./modules/iam"
+
+  iam_role_name = "${var.name}_ecs_task_role"
+
+  iam_role_description = var.ecs_task_role_description
+
+  assume_role_policy = file("./policies/task_assume_role.json")
+
+  iam_role_policy = templatefile("./policies/task_policy.json.tpl", {
+    secrets_arn = module.secrets_db.secret_arn
   })
   
 }
@@ -362,3 +396,30 @@ resource "aws_ecs_cluster" "this" {
 }
 
 
+# TASK DEFINITION
+
+module "airflow_init_task_definition" {
+
+  source = "./modules/ecs_task_definition"
+
+  execution_role_arn = module.ecs_task_execution_iam.iam_role_arn
+
+  task_role_arn = module.ecs_task_role_iam.iam_role_arn
+
+  family = "airflow-init-task"
+
+  has_volume = true
+
+  volume_name = var.volume_name
+
+  efs_file_system_id = module.efs.efs_file_system_id
+
+  # currently for DAG folder
+  efs_access_point_id = module.efs.efs_access_point_dags_id
+
+  container_definitions = templatefile("./policies/task_definitions/airflow_init_container_def.json.tpl", {
+    airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
+    airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+  })
+
+}

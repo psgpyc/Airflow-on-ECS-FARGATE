@@ -4,7 +4,10 @@ resource "aws_efs_file_system" "this" {
 
     # sane defaults
     encrypted = true
+    # general purpose or max io
     performance_mode = "generalPurpose"
+
+    # elastic, brust or provisioned
     throughput_mode = "elastic"
 
     kms_key_id = var.kms_key_id
@@ -32,9 +35,10 @@ resource "aws_efs_mount_target" "this" {
 
     file_system_id = aws_efs_file_system.this.id
 
+    # one mount target in subnet of same AZ to avoid cross AZ charges.
     subnet_id = each.value
 
-    # must be a list in vars
+    # must be a list in vars and allow TCP on 2049
     security_groups = var.mount_target_sec_group_id
 
 }
