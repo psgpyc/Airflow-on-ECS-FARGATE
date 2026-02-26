@@ -32,7 +32,7 @@ resource "aws_ecs_task_definition" "this" {
     dynamic "volume" {
       # only supports efs volume
       # currently setting to only one.
-      for_each = var.has_volume == null ? [] : [1]
+      for_each = var.has_volume == false ? [] : [1]
 
       content {
 

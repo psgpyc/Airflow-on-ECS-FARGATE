@@ -98,13 +98,13 @@ variable "volume_name" {
 variable "efs_file_system_id" {
   description = "EFS file system ID to attach (fs-xxxxxxxx). Required if has_volume = true."
   type        = string
-  default     = null
+  default     = ""
 
   validation {
     condition = (
       var.has_volume == false
       ||
-      (var.efs_file_system_id != null && length(trimspace(var.efs_file_system_id)) > 0)
+      (length(trimspace(var.efs_file_system_id)) > 0)
     )
     error_message = "efs_file_system_id must be set when has_volume = true."
   }
@@ -113,13 +113,13 @@ variable "efs_file_system_id" {
 variable "efs_access_point_id" {
   description = "EFS access point ID to use for mounting. Required if has_volume = true."
   type        = string
-  default     = null
+  default     = ""
 
   validation {
     condition = (
       var.has_volume == false
       ||
-      (var.efs_access_point_id != null && length(trimspace(var.efs_access_point_id)) > 0)
+      (length(trimspace(var.efs_access_point_id)) > 0)
     )
     error_message = "efs_access_point_id must be set when has_volume = true."
   }
@@ -130,5 +130,4 @@ variable "efs_access_point_id" {
 variable "container_definitions" {
     description = "A list of valid container definitions provided as a single valid JSON document"
     type = string
-
 }

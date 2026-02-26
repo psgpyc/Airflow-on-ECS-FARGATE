@@ -396,7 +396,7 @@ resource "aws_ecs_cluster" "this" {
 }
 
 
-# TASK DEFINITION
+# TASK DEFINITIONS
 
 module "airflow_init_task_definition" {
 
@@ -406,7 +406,24 @@ module "airflow_init_task_definition" {
 
   task_role_arn = module.ecs_task_role_iam.iam_role_arn
 
-  family = "airflow-init-task"
+  family = "airflow-init-task-def"
+
+  container_definitions = templatefile("./policies/task_definitions/airflow_init_container_def.json.tpl", {
+    airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
+    airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+  })
+
+}
+
+module "airflow_webserver_task_definition" {
+
+  source = "./modules/ecs_task_definition"
+
+  execution_role_arn = module.ecs_task_execution_iam.iam_role_arn
+
+  task_role_arn = module.ecs_task_role_iam.iam_role_arn
+
+  family = "airflow-web-task-def"
 
   has_volume = true
 
@@ -414,12 +431,48 @@ module "airflow_init_task_definition" {
 
   efs_file_system_id = module.efs.efs_file_system_id
 
-  # currently for DAG folder
   efs_access_point_id = module.efs.efs_access_point_dags_id
 
-  container_definitions = templatefile("./policies/task_definitions/airflow_init_container_def.json.tpl", {
+  container_definitions = templatefile("./policies/task_definitions/airflow_web_task_def.json.tpl", {
     airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
     airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+    source_volume_name = var.volume_name
   })
+  
+}
 
+resource "aws_ecs_service" "airflow_web" {
+  name = "${var.name}-airflow-web-two"
+  cluster = aws_ecs_cluster.this.arn
+
+  task_definition = module.airflow_webserver_task_definition.task_definition_arn
+
+  desired_count = 1
+
+  launch_type = "FARGATE"
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  # IMPORTANT: because the target group health-check might fail while Airflow boots / DB connects
+  health_check_grace_period_seconds = 120
+
+  network_configuration {
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    security_groups  = [module.security_groups["airflow_web"].security_group_id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = module.alb.target_group_arn
+    container_name   = "airflow-web"
+    container_port   = "8080"
+  }
+
+  # Ensures the listener exists before ECS tries to attach the service to the TG.
+  depends_on = [module.alb]
+
+  tags = { Name = "${var.name}-airflow-web" }
+
+  
 }
