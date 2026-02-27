@@ -1,3 +1,24 @@
+locals {
+  efs_file_system_id = module.efs.efs_file_system_id
+
+  airflow_webserver_efs_volume_config = {
+    for k,v in module.efs.efs_access_point_ids: k => {
+      file_system_id = local.efs_file_system_id
+      access_point_id = v
+    }
+
+  }  
+
+  mount_points = [
+    for k, _ in local.airflow_webserver_efs_volume_config: {
+      sourceVolume = k
+      containerPath = "/opt/airflow/${k}" # dags/logs/plugins/config
+      readOnly = false
+    }
+  ]
+}
+
+
 module "vpc_subnet" {
 
     source = "./modules/vpc"
@@ -328,10 +349,23 @@ resource "aws_cloudwatch_log_group" "ecs_fargate_cloudwatch_log_group" {
 
 }
 
+resource "aws_cloudwatch_log_group" "ecs_airflow_web_service_connect_log_group" {
+
+  name = var.service_connect_log_group_name
+
+  retention_in_days = 14
+
+  tags = {
+    Name = var.service_connect_log_group_name
+  }
+  
+}
+
 
 # EFS
 
 module "efs" {
+
   source = "./modules/efs"
 
   creation_token = var.creation_token
@@ -356,7 +390,8 @@ module "ecs_task_execution_iam" {
 
   iam_role_policy = templatefile("./policies/task_execution_role_policy.json.tpl", {
     ecr_repo_arn = module.ecr.ecr_repo_arn
-    cloudwatch_log_group_arn = aws_cloudwatch_log_group.ecs_fargate_cloudwatch_log_group.arn
+    cloudwatch_ecs_log_group_arn = aws_cloudwatch_log_group.ecs_fargate_cloudwatch_log_group.arn
+    cloudwatch_ecs_connect_log_group_arn = aws_cloudwatch_log_group.ecs_airflow_web_service_connect_log_group.arn
     airflow_web_secrets_arn = module.secrets_airflow.secret_arn
     airflow_db_secrets_arn = module.secrets_db.secret_arn
   })
@@ -395,6 +430,22 @@ resource "aws_ecs_cluster" "this" {
   
 }
 
+# Cloud Map Namespace
+
+# Namespace name used by ECS Service Connect for service discovery.
+resource "aws_service_discovery_http_namespace" "this" {
+
+  name = var.cloudmap_namespace_name
+
+  description = var.cloudmap_namespace_description
+
+  tags = {
+      Name      = "${var.cm_name}-cloudmap-http-namespace"
+      component = "service-discovery"
+  }
+  
+}
+
 
 # TASK DEFINITIONS
 
@@ -415,6 +466,8 @@ module "airflow_init_task_definition" {
 
 }
 
+
+
 module "airflow_webserver_task_definition" {
 
   source = "./modules/ecs_task_definition"
@@ -425,23 +478,20 @@ module "airflow_webserver_task_definition" {
 
   family = "airflow-web-task-def"
 
-  has_volume = true
-
-  volume_name = var.volume_name
-
-  efs_file_system_id = module.efs.efs_file_system_id
-
-  efs_access_point_id = module.efs.efs_access_point_dags_id
+  efs_volumes_config = local.airflow_webserver_efs_volume_config
 
   container_definitions = templatefile("./policies/task_definitions/airflow_web_task_def.json.tpl", {
     airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
     airflow_web_secrets_arn = module.secrets_airflow.secret_arn
-    source_volume_name = var.volume_name
+    port_name = var.service_connect_port_name
+    mount_points = jsonencode(local.mount_points)
+
   })
   
 }
 
 resource "aws_ecs_service" "airflow_web" {
+
   name = "${var.name}-airflow-web-two"
   cluster = aws_ecs_cluster.this.arn
 
@@ -473,6 +523,31 @@ resource "aws_ecs_service" "airflow_web" {
   depends_on = [module.alb]
 
   tags = { Name = "${var.name}-airflow-web" }
+
+  service_connect_configuration {
+    enabled = true
+    namespace = aws_service_discovery_http_namespace.this.arn
+
+    service {
+      # MUST match container portMappings[].name in task definition
+      port_name = var.service_connect_port_name
+
+      client_alias {
+        # airflow-web
+        dns_name = var.service_connect_dns_name
+        port = var.service_connect_client_port
+      }
+    }
+
+    log_configuration {
+      log_driver = "awslogs"
+      options = {
+        awslogs-group         = var.service_connect_log_group_name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = var.service_connect_log_stream_prefix
+      }
+    }
+  }
 
   
 }

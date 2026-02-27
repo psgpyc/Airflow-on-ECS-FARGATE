@@ -28,7 +28,6 @@ resource "aws_efs_file_system" "this" {
 }
 
 
-
 resource "aws_efs_mount_target" "this" {
 
     for_each = toset(var.mount_target_subnet_ids)
@@ -43,7 +42,13 @@ resource "aws_efs_mount_target" "this" {
 
 }
 
-resource "aws_efs_access_point" "dags" {
+
+
+resource "aws_efs_access_point" "this" {
+
+  # a map of access point path
+  for_each = length(var.access_point_config) > 0 ? var.access_point_config : {}
+
   file_system_id = aws_efs_file_system.this.id
 
   posix_user {
@@ -52,19 +57,17 @@ resource "aws_efs_access_point" "dags" {
   }
 
   root_directory {
-    path = var.dags_path
+    path = each.value
 
     creation_info {
       owner_uid   = var.airflow_uid
       owner_gid   = var.airflow_gid
-      permissions = var.dags_permissions
+      permissions = var.access_permissions
     }
   }
 
-  tags = merge(var.tags, { Name = "${var.creation_token}-ap-dags" })
+  tags = merge(var.tags, { Name = "${var.creation_token}-${each.key}" })
 
   depends_on = [aws_efs_mount_target.this]
+
 }
-
-
-

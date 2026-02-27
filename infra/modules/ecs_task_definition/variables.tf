@@ -78,50 +78,21 @@ variable "tags" {
 
 # volumes
 
-variable "has_volume" {
-  description = "Whether to create a EFS volume block on the task definition."
-  type        = bool
-  default     = false
-}
-
-variable "volume_name" {
-  description = "Name of the task-level volume (referenced later by container mountPoints.sourceVolume)."
-  type        = string
-  default     = "airflow-efs"
+variable "efs_volumes_config" {
+  description = "Map of EFS volumes keyed by volume name. Each entry defines file system and access point."
+  type = map(object({
+    file_system_id  = string
+    access_point_id = string
+  }))
+  default = {}
 
   validation {
-    condition     = length(trimspace(var.volume_name)) > 0
-    error_message = "volume_name must be a non-empty string."
-  }
-}
-
-variable "efs_file_system_id" {
-  description = "EFS file system ID to attach (fs-xxxxxxxx). Required if has_volume = true."
-  type        = string
-  default     = ""
-
-  validation {
-    condition = (
-      var.has_volume == false
-      ||
-      (length(trimspace(var.efs_file_system_id)) > 0)
-    )
-    error_message = "efs_file_system_id must be set when has_volume = true."
-  }
-}
-
-variable "efs_access_point_id" {
-  description = "EFS access point ID to use for mounting. Required if has_volume = true."
-  type        = string
-  default     = ""
-
-  validation {
-    condition = (
-      var.has_volume == false
-      ||
-      (length(trimspace(var.efs_access_point_id)) > 0)
-    )
-    error_message = "efs_access_point_id must be set when has_volume = true."
+    condition = alltrue([
+      for k, v in var.efs_volumes_config :
+      can(regex("^fs-[0-9a-f]+$", v.file_system_id)) &&
+      can(regex("^fsap-[0-9a-f]+$", v.access_point_id))
+    ])
+    error_message = "Each efs_volumes entry must contain valid fs- and fsap- IDs."
   }
 }
 
@@ -130,4 +101,9 @@ variable "efs_access_point_id" {
 variable "container_definitions" {
     description = "A list of valid container definitions provided as a single valid JSON document"
     type = string
+
+    validation {
+      condition     = can(jsondecode(var.container_definitions))
+      error_message = "container_definitions must be valid JSON."
+    }
 }

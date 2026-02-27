@@ -245,8 +245,6 @@ variable "ecs_task_role_description" {
   
 }
 
-
-
 # EFS
 
 variable "creation_token" {
@@ -257,8 +255,91 @@ variable "creation_token" {
 }
 
 
-variable "volume_name" {
-  description = "Name of the task-level volume (referenced later by container mountPoints.sourceVolume)."
+
+# CLOUD MAP NAMESPACE
+
+variable "cm_name" {
+  description = "Name prefix for tagging/naming resources."
   type        = string
-  default     = "airflow-efs"
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.cm_name)) > 0
+    error_message = "name must be a non-empty string."
+  }
+}
+
+variable "cloudmap_namespace_name" {
+  description = "Cloud Map HTTP namespace name for ECS Service Connect (e.g., 'aede')."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.cloudmap_namespace_name)) > 0
+    error_message = "cloudmap_namespace_name must be a non-empty string."
+  }
+}
+
+variable "cloudmap_namespace_description" {
+  description = "Optional description for the Cloud Map namespace."
+  type        = string
+  default     = "Service discovery namespace for ECS Service Connect."
+}
+
+
+# SERVICE CONNECT
+
+variable "service_connect_port_name" {
+  description = "Named portMapping on the container definition that Service Connect should expose (must match portMappings[].name)."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.service_connect_port_name)) > 0
+    error_message = "service_connect_port_name must be a non-empty string."
+  }
+}
+
+variable "service_connect_dns_name" {
+  description = "Internal DNS name for this service in Service Connect (e.g., 'airflow-web')."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.service_connect_dns_name))
+    error_message = "service_connect_dns_name must be lowercase, alphanumeric/hyphen, 1-63 chars, and not start/end with '-'."
+  }
+}
+
+variable "service_connect_client_port" {
+  description = "Port clients will use when calling the DNS name (usually same as containerPort)."
+  type        = number
+  nullable    = false
+
+  validation {
+    condition     = var.service_connect_client_port >= 1 && var.service_connect_client_port <= 65535
+    error_message = "service_connect_client_port must be between 1 and 65535."
+  }
+}
+
+variable "service_connect_log_group_name" {
+  description = "CloudWatch Logs group for Service Connect logs (Envoy/proxy)."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = length(trimspace(var.service_connect_log_group_name)) > 0
+    error_message = "service_connect_log_group_name must be a non-empty string."
+  }
+}
+
+variable "service_connect_log_stream_prefix" {
+  description = "CloudWatch Logs stream prefix for Service Connect logs."
+  type        = string
+  default     = "service-connect"
+
+  validation {
+    condition     = length(trimspace(var.service_connect_log_stream_prefix)) > 0
+    error_message = "service_connect_log_stream_prefix must be a non-empty string."
+  }
 }

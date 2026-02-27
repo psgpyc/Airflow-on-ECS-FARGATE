@@ -30,16 +30,16 @@ resource "aws_ecs_task_definition" "this" {
     }
 
     dynamic "volume" {
-      # only supports efs volume
-      # currently setting to only one.
-      for_each = var.has_volume == false ? [] : [1]
+
+      for_each = var.efs_volumes_config
 
       content {
 
-        name = var.volume_name
+        name = volume.key
 
         efs_volume_configuration {
-          file_system_id = var.efs_file_system_id
+          
+          file_system_id = volume.value.file_system_id
 
           # setting to '/', overridden by accesspoint definition
           root_directory = "/"
@@ -48,7 +48,7 @@ resource "aws_ecs_task_definition" "this" {
           transit_encryption = "ENABLED"
 
           authorization_config {
-            access_point_id = var.efs_access_point_id
+            access_point_id = volume.value.access_point_id
 
             # Sec Group & Access point based control, no need for IAM currentlyare 
             iam = "DISABLED"
@@ -57,11 +57,11 @@ resource "aws_ecs_task_definition" "this" {
         }
         
       }
+
       
     }
-
+    
     container_definitions = var.container_definitions
 
-    tags = merge(var.tags, { Name = var.family })
-  
+    tags = merge(var.tags, { Name = var.family }) 
 }

@@ -8,7 +8,8 @@
         {
           "containerPort": 8080,
           "hostPort": 8080,
-          "protocol": "tcp"
+          "protocol": "tcp",
+          "name": "${port_name}"
         }
       ],
       "environment": [
@@ -32,14 +33,7 @@
             "valueFrom": "${airflow_sql_alchemy_conn_arn}:sql_alchemy_conn::"
         }
       ],
-      "mountPoints": [
-        {
-          "sourceVolume": "${source_volume_name}",
-          "containerPath": "opt/airflow/dags",
-          "readOnly": false
-        }
-
-      ],
+      "mountPoints": ${mount_points},
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

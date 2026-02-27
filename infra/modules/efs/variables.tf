@@ -73,24 +73,31 @@ variable "airflow_gid" {
   default     = 50000
 }
 
-variable "dags_path" {
-  description = "EFS directory path for DAGs (created by the access point if missing)."
-  type        = string
-  default     = "/dags"
+
+variable "access_point_config" {
+  type = map(string)
+  default = {
+    "dags": "/dags"
+    "logs": "/logs"
+    "plugins": "/plugins"
+    "config": "/config"
+  }
 
   validation {
-    condition     = startswith(var.dags_path, "/")
-    error_message = "dags_path must start with '/'."
+    condition = alltrue([ for _,v in var.access_point_config: startswith( v, "/")])
+    error_message = "Access Point root path must start with '/'."
   }
+  
 }
 
-variable "dags_permissions" {
-  description = "POSIX permissions for the DAGs directory (e.g., '0755')."
+
+variable "access_permissions" {
+  description = "POSIX permissions for the directory (e.g., '0755')."
   type        = string
   default     = "0755"
 
   validation {
-    condition     = can(regex("^0[0-7]{3}$", var.dags_permissions))
-    error_message = "dags_permissions must be a 4-digit octal string like '0755'."
+    condition     = can(regex("^0[0-7]{3}$", var.access_permissions))
+    error_message = "permissions must be a 4-digit octal string like '0755'."
   }
 }

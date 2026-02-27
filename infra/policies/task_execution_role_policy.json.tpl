@@ -28,7 +28,10 @@
                 "logs:CreateLogStream",
                 "logs:PutLogEvents"
             ],
-            "Resource": "${cloudwatch_log_group_arn}:*"
+            "Resource": [
+                "${cloudwatch_ecs_log_group_arn}:*",
+                "${cloudwatch_ecs_connect_log_group_arn}:*"
+            ]
         },
         {
           "Sid" : "ReadDbSecret",

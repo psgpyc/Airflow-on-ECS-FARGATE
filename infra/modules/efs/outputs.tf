@@ -8,16 +8,6 @@ output "efs_file_system_arn" {
   value       = aws_efs_file_system.this.arn
 }
 
-output "efs_access_point_dags_id" {
-  description = "EFS access point ID for DAGs."
-  value       = aws_efs_access_point.dags.id
-}
-
-output "efs_access_point_dags_arn" {
-  description = "EFS access point ARN for DAGs."
-  value       = aws_efs_access_point.dags.arn
-}
-
 output "efs_mount_targets" {
   description = "Map of subnet_id -> mount target attributes."
   value = {
@@ -29,3 +19,23 @@ output "efs_mount_targets" {
     }
   }
 }
+
+
+output "efs_access_point_ids" {
+  description = "Map of EFS access point IDs keyed by access_point_config keys (e.g., ap_dags, ap_logs)."
+  value = {
+    for k, ap in aws_efs_access_point.this: k => ap.id
+  }
+  
+}
+
+output "efs_access_point_arns" {
+  description = "Map of EFS access point ARNs keyed by access_point_config keys."
+  value       = { for k, ap in aws_efs_access_point.this : k => ap.arn }
+}
+
+output "efs_access_point_paths" {
+  description = "Map of access point root paths keyed by access_point_config keys."
+  value       = { for k, cfg in var.access_point_config : k => cfg }
+}
+
