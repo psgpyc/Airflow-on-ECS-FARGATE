@@ -16,6 +16,7 @@ locals {
       readOnly = false
     }
   ]
+
 }
 
 
@@ -304,6 +305,15 @@ module "secrets_db" {
       module.rds_pg.db_port,
       module.rds_pg.db_name
     )
+    celery_backend_conn=format(
+      "db+postgresql://%s:%s@%s:%s/%s",
+      var.pg_master_username,
+      urlencode(var.pg_master_password),
+      module.rds_pg.db_endpoint,
+      module.rds_pg.db_port,
+      module.rds_pg.db_name
+
+    )
 
   })
 }
@@ -446,6 +456,24 @@ resource "aws_service_discovery_http_namespace" "this" {
   
 }
 
+# REDIS
+
+module "redis_for_airflow" {
+  source = "./modules/redis"
+
+  redis_cluster_name = var.redis_cluster_name
+
+  redis_private_subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+
+  redis_security_group_id = module.security_groups["redis"].security_group_id
+
+  redis_node_type       = "cache.t3.micro"
+  redis_num_cache_nodes = 1
+  redis_port            = 6379
+  apply_immediately     = true
+  
+}
+
 
 # TASK DEFINITIONS
 
@@ -484,8 +512,32 @@ module "airflow_webserver_task_definition" {
     airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
     airflow_web_secrets_arn = module.secrets_airflow.secret_arn
     port_name = var.service_connect_port_name
+    execution_api_server_url = "http://${var.service_connect_dns_name}:8080/execution/"
     mount_points = jsonencode(local.mount_points)
 
+  })
+  
+}
+
+module "airflow_scheduler_task_definition" {
+
+  source = "./modules/ecs_task_definition"
+
+  execution_role_arn = module.ecs_task_execution_iam.iam_role_arn
+
+  task_role_arn = module.ecs_task_role_iam.iam_role_arn
+
+  family = "airflow-scheduler-task-def"
+
+  efs_volumes_config = local.airflow_webserver_efs_volume_config
+
+    container_definitions = templatefile("./policies/task_definitions/airflow_scheduler_container_def.json.tpl", {
+      airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
+      airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+      port_name = var.service_connect_port_name
+      mount_points = jsonencode(local.mount_points)
+      celery_broker_url = "redis://:@${module.redis_for_airflow.redis_endpoint}:${module.redis_for_airflow.redis_port}/0"
+      execution_api_server_url = "http://${var.service_connect_dns_name}:8080/execution/"
   })
   
 }

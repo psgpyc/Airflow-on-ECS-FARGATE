@@ -343,3 +343,11 @@ variable "service_connect_log_stream_prefix" {
     error_message = "service_connect_log_stream_prefix must be a non-empty string."
   }
 }
+
+variable "redis_cluster_name" {
+  description = "Name prefix for Redis resources (used in subnet group name + cluster_id)."
+  type        = string
+  nullable    = false
+
+  
+}
