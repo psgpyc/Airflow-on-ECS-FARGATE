@@ -1,9 +1,16 @@
 [
     {
-      "name": "airflow-scheduler",
+      "name": "airflow-celery-worker",
       "image": "373901294251.dkr.ecr.eu-west-2.amazonaws.com/airflow-image-repo/airflow:latest",
       "essential": true,
       "user": "50000:50000",
+      "portMappings": [
+        {
+            "name": "worker-logs",
+            "containerPort": 8793,
+            "protocol": "tcp"
+        }
+      ],
       "environment": [
         {
           "name": "AIRFLOW__CORE__EXECUTOR",
@@ -25,6 +32,18 @@
           "name": "AIRFLOW__CORE__EXECUTION_API_SERVER_URL",
           "value": "${execution_api_server_url}"
         },
+        { 
+            "name": "AIRFLOW__CELERY__WORKER_CONCURRENCY",  
+            "value": "2"  
+        },
+        { 
+            "name": "AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER",  
+            "value": "1"  
+        },
+        { 
+            "name": "AIRFLOW__CELERY__WORKER_MAX_TASKS_PER_CHILD",  
+            "value": "50" 
+        },
         {
             "name": "AIRFLOW__CORE__FERNET_KEY",
             "value": "04f8e6c390b0f5c458bb3dee989b1baa6849d8bb5988c5688146282126f425f6"
@@ -34,10 +53,11 @@
           "value": "7798b22c9ceeb2806dab7624acaaac687a0db68fdc9ad7777052dd4190356085"
         },
         {
-          "name": "AIRFLOW__API_AUTH__JWT_SECRET",
-          "value": "fdbc63752230429f60aaa26c644e23d9c7a036ca96a4f1ce7ffa64b788fb8682"
+        "name": "AIRFLOW__API_AUTH__JWT_SECRET",
+        "value": "fdbc63752230429f60aaa26c644e23d9c7a036ca96a4f1ce7ffa64b788fb8682"
         }
-      ],
+
+    ],
       "secrets": [
         {
             "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
@@ -55,9 +75,9 @@
         "options": {
           "awslogs-group": "/ecs/aede/airflow",
           "awslogs-region": "eu-west-2",
-          "awslogs-stream-prefix": "airflow-scheduler"
+          "awslogs-stream-prefix": "airflow-celery-worker"
         }
       },
-      "command": ["scheduler"]
+      "command": ["celery", "worker"]
     }
 ]

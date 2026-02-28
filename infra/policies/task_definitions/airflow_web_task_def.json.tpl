@@ -28,6 +28,18 @@
         {
           "name": "AIRFLOW__CORE__EXECUTION_API_SERVER_URL",
           "value": "${execution_api_server_url}"
+        },
+        {
+            "name": "AIRFLOW__CORE__FERNET_KEY",
+            "value": "04f8e6c390b0f5c458bb3dee989b1baa6849d8bb5988c5688146282126f425f6"
+        },
+        {
+          "name": "AIRFLOW__API__SECRET_KEY",
+          "value": "7798b22c9ceeb2806dab7624acaaac687a0db68fdc9ad7777052dd4190356085"
+        },
+        {
+          "name": "AIRFLOW__API_AUTH__JWT_SECRET",
+          "value": "fdbc63752230429f60aaa26c644e23d9c7a036ca96a4f1ce7ffa64b788fb8682"
         }
 
       ],

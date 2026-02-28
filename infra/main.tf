@@ -94,6 +94,28 @@ resource "aws_vpc_security_group_ingress_rule" "flower_from_alb" {
   ip_protocol = "tcp"
 }
 
+# AIRFLOW WEB INBOUND
+
+# Airflow internal calls to web/api-server (Execution API on 8080)
+
+resource "aws_vpc_security_group_ingress_rule" "airflow_web_from_worker" {
+  security_group_id            = module.security_groups["airflow_web"].security_group_id
+  referenced_security_group_id = module.security_groups["airflow_worker"].security_group_id
+  description                  = "Airflow worker to web/api-server (8080)"
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "airflow_web_from_scheduler" {
+  security_group_id            = module.security_groups["airflow_web"].security_group_id
+  referenced_security_group_id = module.security_groups["airflow_scheduler"].security_group_id
+  description                  = "Airflow scheduler to web/api-server (8080)"
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
 # REDIS INBOUND FROM WEBSERVER, SCHEDULER, WORKERS AND FLOWERS
 
 
@@ -542,9 +564,81 @@ module "airflow_scheduler_task_definition" {
   
 }
 
+module "airflow_dag_processor_task_definition" {
+
+  source = "./modules/ecs_task_definition"
+
+  execution_role_arn = module.ecs_task_execution_iam.iam_role_arn
+
+  task_role_arn = module.ecs_task_role_iam.iam_role_arn
+
+  family = "airflow-dag-processor-task-def"
+
+  efs_volumes_config = local.airflow_webserver_efs_volume_config
+
+    container_definitions = templatefile("./policies/task_definitions/airflow_dag_processor_container_def.json.tpl", {
+      airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
+      airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+      port_name = var.service_connect_port_name
+      mount_points = jsonencode(local.mount_points)
+      celery_broker_url = "redis://:@${module.redis_for_airflow.redis_endpoint}:${module.redis_for_airflow.redis_port}/0"
+      execution_api_server_url = "http://${var.service_connect_dns_name}:8080/execution/"
+  })
+  
+}
+
+
+module "airflow_triggerer_task_definition" {
+
+  source = "./modules/ecs_task_definition"
+
+  execution_role_arn = module.ecs_task_execution_iam.iam_role_arn
+
+  task_role_arn = module.ecs_task_role_iam.iam_role_arn
+
+  family = "airflow-triggerer-task-def"
+
+  efs_volumes_config = local.airflow_webserver_efs_volume_config
+
+    container_definitions = templatefile("./policies/task_definitions/airflow_triggerer_container_def.json.tpl", {
+      airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
+      airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+      port_name = var.service_connect_port_name
+      mount_points = jsonencode(local.mount_points)
+      celery_broker_url = "redis://:@${module.redis_for_airflow.redis_endpoint}:${module.redis_for_airflow.redis_port}/0"
+      execution_api_server_url = "http://${var.service_connect_dns_name}:8080/execution/"
+  })
+  
+}
+
+module "airflow_celery_worker_task_definition" {
+
+  source = "./modules/ecs_task_definition"
+
+  execution_role_arn = module.ecs_task_execution_iam.iam_role_arn
+
+  task_role_arn = module.ecs_task_role_iam.iam_role_arn
+
+  family = "airflow-celery-worker-task-def"
+
+  memory = 4096
+
+  efs_volumes_config = local.airflow_webserver_efs_volume_config
+
+    container_definitions = templatefile("./policies/task_definitions/airflow_celery_worker_container_def.json.tpl", {
+      airflow_sql_alchemy_conn_arn = module.secrets_db.secret_arn
+      airflow_web_secrets_arn = module.secrets_airflow.secret_arn
+      port_name = var.service_connect_port_name
+      mount_points = jsonencode(local.mount_points)
+      celery_broker_url = "redis://:@${module.redis_for_airflow.redis_endpoint}:${module.redis_for_airflow.redis_port}/0"
+      execution_api_server_url = "http://${var.service_connect_dns_name}:8080/execution/"
+  })
+  
+}
+
 resource "aws_ecs_service" "airflow_web" {
 
-  name = "${var.name}-airflow-web-two"
+  name = "${var.name}-airflow-web-one"
   cluster = aws_ecs_cluster.this.arn
 
   task_definition = module.airflow_webserver_task_definition.task_definition_arn
@@ -552,6 +646,8 @@ resource "aws_ecs_service" "airflow_web" {
   desired_count = 1
 
   launch_type = "FARGATE"
+
+  enable_execute_command = true
 
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
@@ -601,5 +697,204 @@ resource "aws_ecs_service" "airflow_web" {
     }
   }
 
+  
+}
+
+
+resource "aws_ecs_service" "airflow_scheduler" {
+
+  name = "${var.name}-airflow-scheduler-one"
+
+  cluster = aws_ecs_cluster.this.arn
+
+  task_definition = module.airflow_scheduler_task_definition.task_definition_arn
+
+  desired_count = 1
+
+  launch_type = "FARGATE"
+  
+  enable_execute_command = true
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  # IMPORTANT: because the target group health-check might fail while Airflow boots / DB connects
+  health_check_grace_period_seconds = 120
+
+  network_configuration {
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    security_groups  = [module.security_groups["airflow_scheduler"].security_group_id]
+    assign_public_ip = false
+  }
+
+  service_connect_configuration {
+    enabled = true
+    namespace = aws_service_discovery_http_namespace.this.arn
+
+    log_configuration {
+      log_driver = "awslogs"
+      options = {
+        awslogs-group         = var.service_connect_log_group_name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "scheduler-sc"
+      }
+    }
+  }
+
+
+
+  tags = { Name = "${var.name}-airflow-scheduler" }
+  
+}
+
+resource "aws_ecs_service" "airflow_dag_processor" {
+
+  name = "${var.name}-airflow-dag-processor-one"
+
+  cluster = aws_ecs_cluster.this.arn
+
+  task_definition = module.airflow_dag_processor_task_definition.task_definition_arn
+
+  desired_count = 1
+
+  launch_type = "FARGATE"
+
+  enable_execute_command = true
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  # IMPORTANT: because the target group health-check might fail while Airflow boots / DB connects
+  health_check_grace_period_seconds = 120
+
+  network_configuration {
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    security_groups  = [module.security_groups["airflow_scheduler"].security_group_id]
+    assign_public_ip = false
+  }
+
+  service_connect_configuration {
+    enabled = true
+    namespace = aws_service_discovery_http_namespace.this.arn
+
+    log_configuration {
+      log_driver = "awslogs"
+      options = {
+        awslogs-group         = var.service_connect_log_group_name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "scheduler-dp"
+      }
+    }
+  }
+
+
+
+  tags = { Name = "${var.name}-airflow-dag-processor" }
+  
+}
+
+resource "aws_ecs_service" "airflow_triggerer" {
+
+  name = "${var.name}-airflow-triggerer"
+
+  cluster = aws_ecs_cluster.this.arn
+
+  task_definition = module.airflow_triggerer_task_definition.task_definition_arn
+
+  desired_count = 1
+
+  launch_type = "FARGATE"
+
+  enable_execute_command = true
+
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  # IMPORTANT: because the target group health-check might fail while Airflow boots / DB connects
+  health_check_grace_period_seconds = 120
+
+  network_configuration {
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    security_groups  = [module.security_groups["airflow_scheduler"].security_group_id]
+    assign_public_ip = false
+  }
+
+  service_connect_configuration {
+    enabled = true
+    namespace = aws_service_discovery_http_namespace.this.arn
+
+    log_configuration {
+      log_driver = "awslogs"
+      options = {
+        awslogs-group         = var.service_connect_log_group_name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "scheduler-tg"
+      }
+    }
+  }
+
+
+
+  tags = { Name = "${var.name}-airflow-triggerer" }
+  
+}
+
+resource "aws_ecs_service" "airflow_celery_worker" {
+
+  name = "${var.name}-airflow-celery-workers"
+
+  cluster = aws_ecs_cluster.this.arn
+
+  task_definition = module.airflow_celery_worker_task_definition.task_definition_arn
+
+  desired_count = 1
+
+  launch_type = "FARGATE"
+
+  enable_execute_command = true
+
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  # IMPORTANT: because the target group health-check might fail while Airflow boots / DB connects
+  health_check_grace_period_seconds = 120
+
+  network_configuration {
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    security_groups  = [module.security_groups["airflow_worker"].security_group_id]
+    assign_public_ip = false
+  }
+
+  service_connect_configuration {
+    enabled = true
+    namespace = aws_service_discovery_http_namespace.this.arn
+
+    service {
+      # MUST match container portMappings[].name in task definition
+      port_name = "worker-logs"
+      discovery_name = "worker"
+
+      client_alias {
+
+        dns_name = "worker"
+        port = 8793
+      }
+    }
+
+    log_configuration {
+      log_driver = "awslogs"
+      options = {
+        awslogs-group         = var.service_connect_log_group_name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = var.service_connect_log_stream_prefix
+      }
+    }
+  }
+
+
+
+  tags = { Name = "${var.name}-airflow-celery-worker" }
   
 }

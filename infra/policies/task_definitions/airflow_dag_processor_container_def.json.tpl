@@ -1,6 +1,6 @@
 [
     {
-      "name": "airflow-scheduler",
+      "name": "airflow-dag-processor",
       "image": "373901294251.dkr.ecr.eu-west-2.amazonaws.com/airflow-image-repo/airflow:latest",
       "essential": true,
       "user": "50000:50000",
@@ -34,8 +34,8 @@
           "value": "7798b22c9ceeb2806dab7624acaaac687a0db68fdc9ad7777052dd4190356085"
         },
         {
-          "name": "AIRFLOW__API_AUTH__JWT_SECRET",
-          "value": "fdbc63752230429f60aaa26c644e23d9c7a036ca96a4f1ce7ffa64b788fb8682"
+            "name": "AIRFLOW__API_AUTH__JWT_SECRET",
+            "value": "fdbc63752230429f60aaa26c644e23d9c7a036ca96a4f1ce7ffa64b788fb8682"
         }
       ],
       "secrets": [
@@ -55,9 +55,9 @@
         "options": {
           "awslogs-group": "/ecs/aede/airflow",
           "awslogs-region": "eu-west-2",
-          "awslogs-stream-prefix": "airflow-scheduler"
+          "awslogs-stream-prefix": "airflow-dag-processor"
         }
       },
-      "command": ["scheduler"]
+      "command": ["dag-processor"]
     }
 ]

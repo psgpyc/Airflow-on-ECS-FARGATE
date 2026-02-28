@@ -1,0 +1,13 @@
+aws ecs execute-command \
+  --region eu-west-2 \
+  --cluster aede-cluster  \
+  --task 34ec840662e74af1ab60fe0342b02aa5  \
+  --container airflow-celery-worker \
+  --interactive \
+  --command "/bin/sh"
+
+
+  python - <<EOF
+import socket
+print(socket.gethostbyname("airflow-web"))
+EOF
