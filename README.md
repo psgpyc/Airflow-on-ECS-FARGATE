@@ -1,120 +1,63 @@
-# Airflow on AWS ECS (Fargate)
-Infrastructure as Code using Terraform
+![Terraform](https://img.shields.io/badge/Terraform-IaC-blue) 
 
----
+# AEDE: Airflow on AWS ECS Fargate
 
-## Overview
+This repository is intentionally production-shaped.    
+I set up Apache Airflow on AWS ECS Fargate with a secure network boundary, shared storage for DAGs/logs, and AWS-managed secrets — designed to be a stable foundation for running real pipelines.
 
-This repository contains the full Terraform infrastructure required to deploy **Apache Airflow on AWS ECS (Fargate)**
+## Architecture overview
 
-The goal of this project is to design and provision a secure, scalable, multi-AZ container platform for Airflow while following modern cloud engineering best practices:
+Airflow runs as ECS services in private subnets, fronted by an Application Load Balancer (ALB) for the web UI.      
+DAGs and logs are shared via EFS access points, and metadata is stored in RDS PostgreSQL.     
+Sensetive configuration and credentials are stored in Secrets Manager, with least-privilege access via IAM roles/policies.      
+  
+All infrastructure is provisioned using **Terraform**, with state stored remotely in **S3**.
 
-- Infrastructure as Code (Terraform)
-- Private networking with controlled ingress
-- Container orchestration using ECS (Fargate)
-- Shared persistent storage via EFS
-- Secrets management via AWS Secrets Manager
-- Secure IAM role separation
+### List of AWS Services:
 
----
+- Running **Apache Airflow on AWS ECS Fargate** (containerised webserver/scheduler/Triggers/workers)   
+- **VPC networking**: Public subnets for **ALB**, private subnets for **ECS Services**
+- **Amazon EFS** for shared **DAGs, plugins, config, and logs**
+- **Amazon RDS PostgreSQL** as the Airflow metadata database 
+- **Amazon ElastiCache (Redis)** as message broker for Celery executor
+- **AWS Secrets Manager** for sensitive configuration (DB creds, fernet key, webserver secret key)
+- **IAM roles/policies** for ECS task execution and runtime permissions 
+- **AWS KMS encryption** for data at rest (S3/EFS/RDS/Secrets where applicable)
+- **Security groups** designed around “only what is needed” (ALB→ECS, ECS→RDS/EFS/Redis)
+- **Terraform remote state** stored in **S3** (Terraform S3 backend)
 
-## Architecture Overview
+## Security model (IAM, KMS, security groups)
 
-### Networking
+### Public vs private subnets
+Public subnets host the Application Load Balancer (ALB). A subnet is “public” because its route table sends `0.0.0.0/0` traffic to an Internet Gateway (IGW).       
+                
+Private subnets host the ECS Fargate tasks (Airflow components) plus RDS (PostgreSQL) and ElastiCache (Redis). These subnets don’t have a direct inbound route from the internet.  
 
-- Custom VPC
-- Public subnets (for ALB)
-- Private subnets (for ECS, RDS, EFS)
-- Internet Gateway
-- NAT Gateway
-- Route tables and subnet associations
-- Security groups with least-privilege rules
+### Inbound traffic 
+1. The IGW provides a path for inbound internet traffic into the VPC.  
+2. The ALB sits in public subnets and receives HTTP/HTTPS requests.  
+3. The ALB forwards requests to the Airflow webserver service running on ECS Fargate in private subnets.  
+4. ECS tasks aren’t publicly reachable — only the ALB can reach them.  
 
-### Compute
+### Outbound traffic 
+ECS tasks in private subnets sometimes need outbound access (e.g., pulling container images, calling external APIs).  
+- Outbound access is provided via a NAT Gateway placed in a public subnet.  
+- Private subnet route tables send `0.0.0.0/0` traffic to the NAT, which then egresses through the IGW.  
 
-- ECS Cluster (Fargate launch type)
-- Modular ECS Task Definitions
-- ECS Services (to attach to ALB)
-- ECR repository for container images
+### IAM 
+- ECS task execution role: allows ECS to pull images and write logs (for example, to CloudWatch).
+- ECS task runtime role: scoped permissions for the running containers (for example, reading specific Secrets Manager secrets, accessing S3/EFS if required).  
 
-### Load Balancing
+### KMS (encryption at rest). 
+KMS is used to encrypt data at rest where supported:  
+- S3 (Terraform remote state) via SSE-KMS   
+- Secrets Manager  
+- EFS encryption at rest  
+- RDS PostgreSQL encryption at rest      
+- ElastiCache encryption at rest / in transit       
 
-- Application Load Balancer (ALB)
-- Target Groups
-- HTTP listener
 
-### Storage
 
-- Amazon EFS (encrypted at rest)
-- Mount targets in private subnets (multi-AZ)
-- Dedicated EFS security group allowing NFS (TCP 2049)
-- EFS Access Point for Airflow DAGs
-  - Enforced POSIX UID/GID
-  - Root directory creation
-  - Mounted into containers at /opt/airflow/dags
 
-### Database
 
-- RDS PostgreSQL (Airflow metadata database)
-- Private subnet deployment
-- Restricted security group access from ECS only
-
-### Secrets & IAM
-
-- AWS Secrets Manager for RDS credentials
-- Separate Task Execution Role (ECR + CloudWatch access)
-- Separate Task Role (runtime permissions)
-- Policy templates stored under policies/
-
-### Logging
-
-- CloudWatch Log Groups for ECS containers
-- Centralised logging configuration via task definitions
-
----
-
-## Security Model
-
-Security is implemented at multiple layers.
-
-### Network Security
-
-- ECS tasks run in private subnets.
-- Only the ALB is internet-facing.
-- EFS mount targets only allow TCP 2049 from Airflow security groups.
-- RDS only allows inbound from ECS task security groups.
-
-### Storage Security
-
-- EFS encrypted at rest.
-- Transit encryption enabled for NFS.
-- Access Points restrict directory access and enforce POSIX identity.
-
-### IAM Separation
-
-- Execution role for platform-level permissions.
-- Task role for runtime application permissions.
-- Secrets retrieved securely via Secrets Manager.
-
----
-
-## Current Status
-
-Provisioned components:
-
-- VPC and networking
-- ALB
-- ECS cluster
-- ECR repository
-- EFS with mount targets and access point
-- CloudWatch log groups
-- Secrets Manager integration
-- IAM role scaffolding
-
-Next steps:
-
-- Finalise ECS services
-- Deploy Airflow webserver, scheduler, and workers
-- Attach services to ALB
-- Validate DAG loading from EFS
 
