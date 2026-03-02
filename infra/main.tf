@@ -351,6 +351,9 @@ module "secrets_airflow" {
 
     airflow_admin_username = var.airflow_admin_username
     airflow_admin_password = var.airflow_admin_password
+    airflow_api_auth_jwt_secret = var.airflow_api_auth_jwt_secret
+    airflow_core_fernet_key = var.airflow_core_fernet_key
+    airflow_core_api_secret_key = var.airflow_core_api_secret_key
 
   })
   

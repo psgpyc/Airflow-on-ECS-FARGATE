@@ -43,20 +43,7 @@
         { 
             "name": "AIRFLOW__CELERY__WORKER_MAX_TASKS_PER_CHILD",  
             "value": "50" 
-        },
-        {
-            "name": "AIRFLOW__CORE__FERNET_KEY",
-            "value": "04f8e6c390b0f5c458bb3dee989b1baa6849d8bb5988c5688146282126f425f6"
-        },
-        {
-          "name": "AIRFLOW__API__SECRET_KEY",
-          "value": "7798b22c9ceeb2806dab7624acaaac687a0db68fdc9ad7777052dd4190356085"
-        },
-        {
-        "name": "AIRFLOW__API_AUTH__JWT_SECRET",
-        "value": "fdbc63752230429f60aaa26c644e23d9c7a036ca96a4f1ce7ffa64b788fb8682"
         }
-
     ],
       "secrets": [
         {
@@ -67,6 +54,18 @@
           "name": "AIRFLOW__CELERY__RESULT_BACKEND",
           "valueFrom": "${airflow_sql_alchemy_conn_arn}:celery_backend_conn::"
 
+        },
+        {
+            "name": "AIRFLOW__CORE__FERNET_KEY",
+            "valueFrom": "${airflow_web_secrets_arn}:airflow_core_fernet_key::"
+        },
+        {
+          "name": "AIRFLOW__API__SECRET_KEY",
+          "valueFrom": "${airflow_web_secrets_arn}:airflow_core_api_secret_key::}"
+        },
+        {
+          "name": "AIRFLOW__API_AUTH__JWT_SECRET",
+          "valueFrom": "${airflow_web_secrets_arn}:airflow_api_auth_jwt_secret::}"
         }
       ],
       "mountPoints": ${mount_points},

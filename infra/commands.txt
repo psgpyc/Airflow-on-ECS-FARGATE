@@ -1,7 +1,7 @@
 aws ecs execute-command \
   --region eu-west-2 \
   --cluster aede-cluster  \
-  --task 34ec840662e74af1ab60fe0342b02aa5  \
+  --task 29c748729bff4c04ad3e12a29e9b5b98  \
   --container airflow-celery-worker \
   --interactive \
   --command "/bin/sh"

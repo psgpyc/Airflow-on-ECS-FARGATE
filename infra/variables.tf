@@ -221,6 +221,41 @@ variable "airflow_admin_password" {
   }
 }
 
+# variables.tf
+
+variable "airflow_api_auth_jwt_secret" {
+  description = "JWT signing secret used by Airflow Execution API auth."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(trimspace(var.airflow_api_auth_jwt_secret)) >= 32
+    error_message = "airflow_api_auth_jwt_secret must be at least 32 characters."
+  }
+}
+
+variable "airflow_core_fernet_key" {
+  description = "Fernet key used by Airflow to encrypt/decrypt sensitive values (connections, variables, etc.)."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(trimspace(var.airflow_core_fernet_key)) > 0
+    error_message = "airflow_core_fernet_key must not be empty."
+  }
+}
+
+variable "airflow_core_api_secret_key" {
+  description = "Airflow API secret key (if you are wiring it for your deployment)."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(trimspace(var.airflow_core_api_secret_key)) >= 32
+    error_message = "airflow_core_api_secret_key must be at least 32 characters."
+  }
+}
+
 
 # ECR
 

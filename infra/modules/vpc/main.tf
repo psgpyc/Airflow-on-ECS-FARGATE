@@ -28,6 +28,8 @@ resource "aws_vpc" "this" {
   enable_dns_hostnames = true
 
   enable_network_address_usage_metrics = var.enable_network_address_usage_metrics
+
+  # default or dedicated: Current is default.
   instance_tenancy                     = var.instance_tenancy
 
   tags = local.vpc_tags
