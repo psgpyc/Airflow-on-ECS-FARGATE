@@ -9,13 +9,6 @@ terraform {
 
   }
 
-
-  backend "s3" {
-    bucket  = "aede-terraform-state-40056b"
-    key     = "dev/aede/terraform.tfstate"
-    region  = "eu-west-2"
-    encrypt = true
-  }
 }
 
 provider "aws" {

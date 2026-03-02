@@ -58,3 +58,14 @@ module "redis_for_airflow" {
   apply_immediately     = true
   
 }
+
+
+# ECR REPOSITORY
+
+  module "ecr" {
+
+    source = "./modules/ecr"
+
+    name = var.ecr_name
+
+}

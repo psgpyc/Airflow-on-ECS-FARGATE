@@ -1,15 +1,3 @@
-# ECR REPOSITORY
-
-  module "ecr" {
-
-    source = "./modules/ecr"
-
-    name = var.ecr_name
-
-}
-
-
-
 # Cloud Map Namespace
 
 # Namespace name used by ECS Service Connect for service discovery.

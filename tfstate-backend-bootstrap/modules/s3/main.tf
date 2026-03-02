@@ -1,0 +1,258 @@
+resource "aws_s3_bucket" "this" {
+
+    bucket = var.bucket_name
+
+    tags = var.bucket_tags
+
+    force_destroy = var.bucket_force_destroy
+
+}
+
+resource "aws_s3_bucket_versioning" "this" {
+
+    bucket = aws_s3_bucket.this.id
+
+    versioning_configuration {
+
+      status = var.bucket_versioning_status
+
+    }
+}
+
+resource "aws_s3_bucket_ownership_controls" "this" {
+
+    bucket = aws_s3_bucket.this.id
+
+    rule {
+        object_ownership = "BucketOwnerEnforced"
+     }
+  
+}
+
+resource "aws_s3_bucket_public_access_block" "this" {
+
+    bucket = aws_s3_bucket.this.id
+
+    # Guardrail: block any public access via ACLs or bucket policy.
+    block_public_acls = true
+
+    # prevents creating or updating a bucket policy that would make the bucket public(principal: *).
+    block_public_policy = true
+    ignore_public_acls = true
+
+    # if the bucket is already public, still block public/anon access.
+    restrict_public_buckets = true
+
+    depends_on = [ aws_s3_bucket_ownership_controls.this ]
+
+}
+
+
+resource "aws_s3_bucket_lifecycle_configuration" "this" {
+
+    bucket = aws_s3_bucket.this.id
+
+    dynamic "rule" {
+
+        for_each = length(var.current_v_lifecycle_rules) > 0 ?  var.current_v_lifecycle_rules : []
+
+        content {
+
+            id = rule.value.id
+
+            status = rule.value.status
+
+            dynamic "filter" {
+
+                for_each = rule.value.prefix == null && rule.value.tags == null ?  [1] : []
+
+                content {
+                  
+                }
+            }
+
+            dynamic "filter" {
+                for_each = rule.value.prefix != null && rule.value.tags == null ? [1] : []
+
+                content {
+
+                  prefix = rule.value.prefix
+
+                }
+              
+            }
+
+            dynamic "filter" {
+
+                for_each = rule.value.tags != null && rule.value.prefix == null ? [1] : []
+
+                content {
+                  and {
+                    tags = rule.value.tags
+                  }
+                }
+              
+            }
+
+            dynamic "filter" {
+                for_each = rule.value.tags != null && rule.value.prefix != null ? [1] : []
+
+                content {
+                  and {
+                    prefix = rule.value.prefix
+                    tags = rule.value.tags
+                  }
+                }
+              
+            }
+
+            dynamic "transition" {
+
+                for_each = rule.value.transition
+
+                content {
+                  days = transition.value.days
+                  storage_class = transition.value.storage_class
+                }
+              
+            }
+
+
+            dynamic "expiration" {
+
+                for_each = rule.value.expiration == null ? [] : [rule.value.expiration]
+
+                content {
+                    days = expiration.value.days
+                  
+                }
+            }
+          
+        }
+      
+    }
+
+    dynamic "rule" {
+
+        for_each = length(var.noncurrent_v_lifecycle_rules) > 0 ? var.noncurrent_v_lifecycle_rules : []
+
+        content {
+
+          id = rule.value.id
+
+          status = rule.value.status
+
+            dynamic "filter" {
+                for_each = rule.value.prefix != null && rule.value.tags == null ? [1] : []
+
+                content {
+                  prefix = rule.value.prefix
+                }
+              
+            }
+
+            dynamic "filter" {
+                for_each = rule.value.tags != null && rule.value.prefix == null ? [1] : []
+
+                content {
+                  and {
+                    tags = rule.value.tags
+                  }
+                }
+              
+            }
+
+            dynamic "filter" {
+                for_each = rule.value.tags != null && rule.value.prefix != null ? [rule.value.tags] : []
+
+                content {
+                  and {
+                    prefix = filter.value.prefix
+                    tags = filter.value.tags
+                  }
+                }
+              
+            }
+
+            dynamic "noncurrent_version_transition" {
+
+                for_each = rule.value.noncurrent_version_transition
+
+                content {
+                  noncurrent_days = noncurrent_version_transition.value.noncurrent_days 
+                  storage_class = noncurrent_version_transition.value.storage_class
+                }
+              
+            }
+
+
+            dynamic "noncurrent_version_expiration" {
+
+                for_each = rule.value.noncurrent_version_expiration == null ? [] : [rule.value.noncurrent_version_expiration]
+
+                content {
+                
+                    noncurrent_days = noncurrent_version_expiration.value.noncurrent_days
+                  
+                }
+            }
+
+            # non-negotiable configs for non-current versions
+
+            abort_incomplete_multipart_upload {
+
+                days_after_initiation = 7
+              
+            }
+
+        }
+      
+    }
+
+
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
+    
+    bucket = aws_s3_bucket.this.id
+
+    rule {
+
+        dynamic "apply_server_side_encryption_by_default" {
+            
+            for_each = var.sse_algorithm == "AES256" && var.kms_master_key_id == null ? [1] : []
+
+            content {
+
+                sse_algorithm = var.sse_algorithm
+            }
+          
+        }
+
+        dynamic "apply_server_side_encryption_by_default" {
+
+            # sanity check, var enforced validation does not allow kms_master_key_id to be null if sse_algorithm is aws:kms or aws:kms:dsse
+            for_each = (
+                contains(["aws:kms", "aws:kms:dsse"], var.sse_algorithm) 
+                && (var.kms_master_key_id != null 
+                && length(trimspace( var.kms_master_key_id)) > 0)
+            ) ? [1] : []
+
+            content {
+
+                sse_algorithm = var.sse_algorithm
+                kms_master_key_id = var.kms_master_key_id
+            }
+          
+        }
+    }
+
+    depends_on = [ 
+        aws_s3_bucket.this, 
+        aws_s3_bucket_versioning.this, 
+        aws_s3_bucket_ownership_controls.this, 
+        aws_s3_bucket_public_access_block.this, 
+        aws_s3_bucket_lifecycle_configuration.this 
+    ]
+  
+}
