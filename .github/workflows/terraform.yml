@@ -27,7 +27,7 @@ defaults:
     working-directory: infra
 
 env:
-  TF_VAR_FILE: env/dev.auto.tfvars
+  TF_VAR_FILE: envs/dev.auto.tfvars
   TF_PLAN_FILE: tfplan
 
 jobs:
