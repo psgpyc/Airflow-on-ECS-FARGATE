@@ -31,12 +31,12 @@ variable "kms_key_id" {
 
 
 variable "secret_string" {
-  type = string
-  nullable = false
+  type        = string
+  nullable    = false
   description = "A secret json to store in vault"
-  
+
   validation {
-    condition = length(trimspace(var.secret_string)) > 0 && can(jsonencode(var.secret_string))
+    condition     = length(trimspace(var.secret_string)) > 0 && can(jsonencode(var.secret_string))
     error_message = "Must be a valid json"
   }
 }

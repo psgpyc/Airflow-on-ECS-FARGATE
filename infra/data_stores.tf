@@ -6,7 +6,7 @@ module "rds_pg" {
 
   name = var.db_subnet_group_name
 
-  subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+  subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids : v]
 
   description = var.db_subnet_group_description
 
@@ -35,7 +35,7 @@ module "efs" {
 
   creation_token = var.creation_token
 
-  mount_target_subnet_ids = [for k,v in module.vpc_subnet.private_subnet_ids: v]
+  mount_target_subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids : v]
 
   mount_target_sec_group_id = [module.security_groups["efs"].security_group_id]
 
@@ -48,7 +48,7 @@ module "redis_for_airflow" {
 
   redis_cluster_name = var.redis_cluster_name
 
-  redis_private_subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+  redis_private_subnet_ids = [for k, v in module.vpc_subnet.private_subnet_ids : v]
 
   redis_security_group_id = module.security_groups["redis"].security_group_id
 
@@ -56,16 +56,16 @@ module "redis_for_airflow" {
   redis_num_cache_nodes = 1
   redis_port            = 6379
   apply_immediately     = true
-  
+
 }
 
 
 # ECR REPOSITORY
 
-  module "ecr" {
+module "ecr" {
 
-    source = "./modules/ecr"
+  source = "./modules/ecr"
 
-    name = var.ecr_name
+  name = var.ecr_name
 
 }

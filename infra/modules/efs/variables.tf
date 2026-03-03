@@ -77,17 +77,17 @@ variable "airflow_gid" {
 variable "access_point_config" {
   type = map(string)
   default = {
-    "dags": "/dags"
-    "logs": "/logs"
-    "plugins": "/plugins"
-    "config": "/config"
+    "dags" : "/dags"
+    "logs" : "/logs"
+    "plugins" : "/plugins"
+    "config" : "/config"
   }
 
   validation {
-    condition = alltrue([ for _,v in var.access_point_config: startswith( v, "/")])
+    condition     = alltrue([for _, v in var.access_point_config : startswith(v, "/")])
     error_message = "Access Point root path must start with '/'."
   }
-  
+
 }
 
 

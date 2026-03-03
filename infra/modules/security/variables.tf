@@ -1,20 +1,20 @@
 variable "sec_group_name" {
-  
-  type = string
+
+  type     = string
   nullable = false
 }
 
 variable "sec_group_description" {
 
-    type = string
-    nullable = true
-  
+  type     = string
+  nullable = true
+
 }
 
 variable "sec_group_vpc_id" {
-    type = string
-    nullable = false
-  
+  type     = string
+  nullable = false
+
 }
 
 variable "tags" {
@@ -42,9 +42,9 @@ variable "tags" {
 #                 (try(r.cidr_ipv4, null) != null) != (try(r.referenced_security_group_id, null) != null)
 #         ])
 #         error_message = "Each ingress rule must set exactly one of cidr_ipv4 or referenced_security_group_id."
-      
+
 #     }
-  
+
 # }
 
 # variable "sec_group_egress_rule" {
@@ -65,8 +65,8 @@ variable "tags" {
 
 #         ])
 #         error_message = "Each egress rule must set exactly one of cidr_ipv4 or referenced_security_group_id."
-      
+
 #     }
-  
+
 # }
 

@@ -1,20 +1,20 @@
 variable "aws_profile" {
 
-    type = string
-    description = "The profile identifier to use to connect to AWS"
-    nullable = false
-    default = "default"
+  type        = string
+  description = "The profile identifier to use to connect to AWS"
+  nullable    = false
+  default     = "default"
 
 }
 
 
 variable "aws_region" {
 
-    type = string
-    description = "The default AWS region"
-    nullable = false
-    default = "eu-west-2"
-  
+  type        = string
+  description = "The default AWS region"
+  nullable    = false
+  default     = "eu-west-2"
+
 }
 
 # VPC
@@ -38,12 +38,12 @@ variable "cidr_block" {
 
 variable "subnet_config" {
 
-    type = map(object({
-      cidr_block = string
-      availability_zone= string
-      type= string  # public or private
-      tags = optional(map(string), {})
-    }))
+  type = map(object({
+    cidr_block        = string
+    availability_zone = string
+    type              = string # public or private
+    tags              = optional(map(string), {})
+  }))
 
 }
 
@@ -54,40 +54,40 @@ variable "sec_group_config" {
 
   type = map(object({
 
-    sec_group_name = string
+    sec_group_name        = string
     sec_group_description = string
 
   }))
-  
+
 }
 
 
 # ALB
 
 variable "alb_name" {
-  type = string
+  type     = string
   nullable = false
 
 }
 
 variable "is_internal" {
 
-    type = bool
-    default = false
-    
+  type    = bool
+  default = false
+
 }
 
 variable "load_balancer_type" {
-    type = string
-    nullable = false
-    default = "application"
+  type     = string
+  nullable = false
+  default  = "application"
 }
 
 variable "idle_timeout" {
 
-    type = string
-    default = 60
-  
+  type    = string
+  default = 60
+
 }
 
 
@@ -102,7 +102,7 @@ variable "is_access_log_enabled" {
 variable "target_g_port" {
   description = "Port the load balancer uses when routing traffic to targets."
   type        = number
-  default = 8080
+  default     = 8080
 
   validation {
     condition     = var.target_g_port >= 1 && var.target_g_port <= 65535
@@ -268,16 +268,16 @@ variable "ecr_name" {
 # IAM
 variable "ecs_task_execution_role_description" {
 
-    type = string
-    nullable = false
-  
+  type     = string
+  nullable = false
+
 }
 
 variable "ecs_task_role_description" {
 
-    type = string
-    nullable = false
-  
+  type     = string
+  nullable = false
+
 }
 
 # EFS
@@ -384,5 +384,5 @@ variable "redis_cluster_name" {
   type        = string
   nullable    = false
 
-  
+
 }

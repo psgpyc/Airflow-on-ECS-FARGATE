@@ -16,7 +16,7 @@ variable "redis_private_subnet_ids" {
 
   validation {
     condition = (
-      length(var.redis_private_subnet_ids) >= 1 
+      length(var.redis_private_subnet_ids) >= 1
     )
     error_message = "redis_private_subnet_ids must contain at least 1 valid subnet-xxxxxxxx id."
   }

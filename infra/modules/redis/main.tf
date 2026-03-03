@@ -1,33 +1,33 @@
 resource "aws_elasticache_subnet_group" "this" {
 
-    name = "${var.redis_cluster_name}-redis-subnet-group"
+  name = "${var.redis_cluster_name}-redis-subnet-group"
 
-    # a list of subnet ids
-    subnet_ids = var.redis_private_subnet_ids
-  
+  # a list of subnet ids
+  subnet_ids = var.redis_private_subnet_ids
+
 }
 
 
 resource "aws_elasticache_cluster" "this" {
 
-    cluster_id = "${var.redis_cluster_name}-redis"
-    
-    engine = "redis"
+  cluster_id = "${var.redis_cluster_name}-redis"
 
-    # default 6439
-    port = var.redis_port
+  engine = "redis"
 
-    # By Default: cache.t3.micro
-    node_type = var.redis_node_type 
+  # default 6439
+  port = var.redis_port
 
-    num_cache_nodes = var.redis_num_cache_nodes
+  # By Default: cache.t3.micro
+  node_type = var.redis_node_type
 
-    subnet_group_name = aws_elasticache_subnet_group.this.name
+  num_cache_nodes = var.redis_num_cache_nodes
 
-    security_group_ids = [var.redis_security_group_id]
+  subnet_group_name = aws_elasticache_subnet_group.this.name
 
-    apply_immediately = var.apply_immediately
+  security_group_ids = [var.redis_security_group_id]
 
-    tags = var.tags
+  apply_immediately = var.apply_immediately
+
+  tags = var.tags
 
 }

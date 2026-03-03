@@ -1,79 +1,79 @@
 variable "name" {
 
-    type = string
-    nullable = false
+  type     = string
+  nullable = false
 
-    validation {
-      condition = length(trimspace(var.name)) > 0
-      error_message = "Name of the load balancer is required."
-    }
+  validation {
+    condition     = length(trimspace(var.name)) > 0
+    error_message = "Name of the load balancer is required."
+  }
 }
 
 variable "is_internal" {
 
-    type = bool
-    default = false
-    
+  type    = bool
+  default = false
+
 }
 
 variable "load_balancer_type" {
-    type = string
-    nullable = false
-    default = "application"
+  type     = string
+  nullable = false
+  default  = "application"
 
-    validation {
-      condition = var.load_balancer_type == "application"
-      error_message = "This module only supports application load balancer"
-    }  
+  validation {
+    condition     = var.load_balancer_type == "application"
+    error_message = "This module only supports application load balancer"
+  }
 }
 
 variable "security_groups" {
-    type = list(string)
-    nullable = false
+  type     = list(string)
+  nullable = false
 
-    validation {
-      condition = length(var.security_groups) > 0 
-      error_message = "ALB must have a security group id assigned"
-    }
+  validation {
+    condition     = length(var.security_groups) > 0
+    error_message = "ALB must have a security group id assigned"
+  }
 
 }
 
 
 variable "subnets" {
-    type = list(string)
-    nullable = false
+  type     = list(string)
+  nullable = false
 
-    validation {
-      condition = length(var.subnets) >= 2
-      error_message = "ALB must be deployed in at least two subnets (multi-AZ)."
-    }
-  
+  validation {
+    condition     = length(var.subnets) >= 2
+    error_message = "ALB must be deployed in at least two subnets (multi-AZ)."
+  }
+
 }
 
 variable "ip_address_type" {
 
-    type = string
-    default = "ipv4"
+  type    = string
+  default = "ipv4"
 
-    validation {
-      condition = (
-        contains(["ipv4", "dualstack"], lower(trimspace(var.ip_address_type)))
-      )
-      error_message = "ip_address_type must be one of: ipv4, dualstack"
-    }
-  
+  validation {
+    condition = (
+      contains(["ipv4", "dualstack"], lower(trimspace(var.ip_address_type)))
+    )
+    error_message = "ip_address_type must be one of: ipv4, dualstack"
+  }
+
 }
 
 variable "idle_timeout" {
 
-    type = string
-    default = 60
-  
+  type    = string
+  default = 60
+
 }
 
 variable "enable_deletion_protection" {
-    type = bool
-    default = false
+  type    = bool
+  default = false
 
 }
 
@@ -116,7 +116,7 @@ variable "bucket_prefix" {
 variable "target_g_port" {
   description = "Port the load balancer uses when routing traffic to targets."
   type        = number
-  default = 8080
+  default     = 8080
 
   validation {
     condition     = var.target_g_port >= 1 && var.target_g_port <= 65535

@@ -17,7 +17,7 @@ locals {
 
   private_subnet_ids = {
     for k, s in aws_subnet.this : k => s.id
-      if s.tags["type"] == "private"
+    if s.tags["type"] == "private"
   }
 }
 
@@ -30,7 +30,7 @@ resource "aws_vpc" "this" {
   enable_network_address_usage_metrics = var.enable_network_address_usage_metrics
 
   # default or dedicated: Current is default.
-  instance_tenancy                     = var.instance_tenancy
+  instance_tenancy = var.instance_tenancy
 
   tags = local.vpc_tags
 }
@@ -72,7 +72,7 @@ resource "aws_nat_gateway" "this" {
 
   allocation_id = aws_eip.nat.id
 
-  subnet_id     = aws_subnet.this["public_a"].id
+  subnet_id = aws_subnet.this["public_a"].id
 
   tags = merge(var.tags, { Name = "${var.name}-nat" })
 }

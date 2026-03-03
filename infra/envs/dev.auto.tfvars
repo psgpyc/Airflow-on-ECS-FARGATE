@@ -83,7 +83,7 @@ sec_group_config = {
   }
 
   efs = {
-    sec_group_name = "secg-airflow-efs-tg",
+    sec_group_name        = "secg-airflow-efs-tg",
     sec_group_description = "EFS mount target security group. Accept TCP on 2049 from Airflow Security Groups"
   }
 }
@@ -99,18 +99,18 @@ alb_name = "aede"
 db_subnet_group_name        = "airflow-db-subnet-group"
 db_subnet_group_description = "DB subnet group for Airflow RDS PostgreSQL (private subnets across 2 AZs)."
 
-pg_instance_class           = "db.t4g.micro"
-pg_engine_version           = "17.8"
-pg_allocated_storage_gb     = 20
+pg_instance_class       = "db.t4g.micro"
+pg_engine_version       = "17.8"
+pg_allocated_storage_gb = 20
 
-pg_db_name                  = "airflow"
-pg_master_username          = "airflow"
+pg_db_name         = "airflow"
+pg_master_username = "airflow"
 # pg_master_password moved to actions secrets
 
 # SECRETS MANAGER
 
-secret_name = "airflow-rds-secrets"
-airflow_secret_name = "airflow-web-secrets"
+secret_name            = "airflow-rds-secrets"
+airflow_secret_name    = "airflow-web-secrets"
 airflow_admin_username = "psgpyc"
 
 # airflow_admin_password moved to actions secrets
@@ -122,7 +122,7 @@ ecr_name = "airflow-image-repo"
 # IAM
 
 ecs_task_execution_role_description = "IAM role for ECS farget agents to assume"
-ecs_task_role_description = "IAM role for ECS fareget Tasks"
+ecs_task_role_description           = "IAM role for ECS fareget Tasks"
 
 # EFS
 
@@ -131,7 +131,7 @@ creation_token = "airflow-aede-efs"
 # CLOUDMAP NAMES
 
 cloudmap_namespace_name        = "aede"
-cm_name = "aedecm"
+cm_name                        = "aedecm"
 cloudmap_namespace_description = "Service discovery namespace for ECS Service Connect (Airflow on ECS Fargate)."
 
 # REDIS
@@ -139,8 +139,8 @@ redis_cluster_name = "aede-airflow"
 
 # SERVICE CONNECT
 
-service_connect_port_name       = "airflow-api"
-service_connect_dns_name        = "airflow-web"
-service_connect_client_port     = 8080
-service_connect_log_group_name  = "/ecs/aede/service-connect"
+service_connect_port_name         = "airflow-api"
+service_connect_dns_name          = "airflow-web"
+service_connect_client_port       = 8080
+service_connect_log_group_name    = "/ecs/aede/service-connect"
 service_connect_log_stream_prefix = "airflow-web-sc"

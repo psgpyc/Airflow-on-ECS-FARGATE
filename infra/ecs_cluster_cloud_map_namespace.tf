@@ -8,10 +8,10 @@ resource "aws_service_discovery_http_namespace" "this" {
   description = var.cloudmap_namespace_description
 
   tags = {
-      Name      = "${var.cm_name}-cloudmap-http-namespace"
-      component = "service-discovery"
+    Name      = "${var.cm_name}-cloudmap-http-namespace"
+    component = "service-discovery"
   }
-  
+
 }
 
 
@@ -25,7 +25,7 @@ resource "aws_ecs_cluster" "this" {
   }
 
   tags = {
-      Name = "${var.name}-cluster"
-    }
-  
+    Name = "${var.name}-cluster"
+  }
+
 }

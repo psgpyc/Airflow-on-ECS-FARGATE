@@ -1,6 +1,6 @@
 resource "aws_ecs_service" "airflow_web" {
 
-  name = "${var.name}-airflow-web-one"
+  name    = "${var.name}-airflow-web-one"
   cluster = aws_ecs_cluster.this.arn
 
   task_definition = module.airflow_webserver_task_definition.task_definition_arn
@@ -18,7 +18,7 @@ resource "aws_ecs_service" "airflow_web" {
   health_check_grace_period_seconds = 120
 
   network_configuration {
-    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids : v]
     security_groups  = [module.security_groups["airflow_web"].security_group_id]
     assign_public_ip = false
   }
@@ -35,7 +35,7 @@ resource "aws_ecs_service" "airflow_web" {
   tags = { Name = "${var.name}-airflow-web" }
 
   service_connect_configuration {
-    enabled = true
+    enabled   = true
     namespace = aws_service_discovery_http_namespace.this.arn
 
     service {
@@ -45,7 +45,7 @@ resource "aws_ecs_service" "airflow_web" {
       client_alias {
         # airflow-web
         dns_name = var.service_connect_dns_name
-        port = var.service_connect_client_port
+        port     = var.service_connect_client_port
       }
     }
 
@@ -59,7 +59,7 @@ resource "aws_ecs_service" "airflow_web" {
     }
   }
 
-  
+
 }
 
 
@@ -74,7 +74,7 @@ resource "aws_ecs_service" "airflow_scheduler" {
   desired_count = 1
 
   launch_type = "FARGATE"
-  
+
   enable_execute_command = true
 
   deployment_minimum_healthy_percent = 50
@@ -84,13 +84,13 @@ resource "aws_ecs_service" "airflow_scheduler" {
   health_check_grace_period_seconds = 120
 
   network_configuration {
-    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids : v]
     security_groups  = [module.security_groups["airflow_scheduler"].security_group_id]
     assign_public_ip = false
   }
 
   service_connect_configuration {
-    enabled = true
+    enabled   = true
     namespace = aws_service_discovery_http_namespace.this.arn
 
     log_configuration {
@@ -106,7 +106,7 @@ resource "aws_ecs_service" "airflow_scheduler" {
 
 
   tags = { Name = "${var.name}-airflow-scheduler" }
-  
+
 }
 
 resource "aws_ecs_service" "airflow_dag_processor" {
@@ -130,13 +130,13 @@ resource "aws_ecs_service" "airflow_dag_processor" {
   health_check_grace_period_seconds = 120
 
   network_configuration {
-    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids : v]
     security_groups  = [module.security_groups["airflow_scheduler"].security_group_id]
     assign_public_ip = false
   }
 
   service_connect_configuration {
-    enabled = true
+    enabled   = true
     namespace = aws_service_discovery_http_namespace.this.arn
 
     log_configuration {
@@ -152,7 +152,7 @@ resource "aws_ecs_service" "airflow_dag_processor" {
 
 
   tags = { Name = "${var.name}-airflow-dag-processor" }
-  
+
 }
 
 resource "aws_ecs_service" "airflow_triggerer" {
@@ -177,13 +177,13 @@ resource "aws_ecs_service" "airflow_triggerer" {
   health_check_grace_period_seconds = 120
 
   network_configuration {
-    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids : v]
     security_groups  = [module.security_groups["airflow_scheduler"].security_group_id]
     assign_public_ip = false
   }
 
   service_connect_configuration {
-    enabled = true
+    enabled   = true
     namespace = aws_service_discovery_http_namespace.this.arn
 
     log_configuration {
@@ -199,7 +199,7 @@ resource "aws_ecs_service" "airflow_triggerer" {
 
 
   tags = { Name = "${var.name}-airflow-triggerer" }
-  
+
 }
 
 resource "aws_ecs_service" "airflow_celery_worker" {
@@ -224,24 +224,24 @@ resource "aws_ecs_service" "airflow_celery_worker" {
   health_check_grace_period_seconds = 120
 
   network_configuration {
-    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids: v]
+    subnets          = [for k, v in module.vpc_subnet.private_subnet_ids : v]
     security_groups  = [module.security_groups["airflow_worker"].security_group_id]
     assign_public_ip = false
   }
 
   service_connect_configuration {
-    enabled = true
+    enabled   = true
     namespace = aws_service_discovery_http_namespace.this.arn
 
     service {
       # MUST match container portMappings[].name in task definition
-      port_name = "worker-logs"
+      port_name      = "worker-logs"
       discovery_name = "worker"
 
       client_alias {
 
         dns_name = "worker"
-        port = 8793
+        port     = 8793
       }
     }
 
@@ -258,5 +258,5 @@ resource "aws_ecs_service" "airflow_celery_worker" {
 
 
   tags = { Name = "${var.name}-airflow-celery-worker" }
-  
+
 }

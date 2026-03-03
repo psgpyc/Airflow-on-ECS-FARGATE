@@ -34,7 +34,7 @@ variable "task_role_arn" {
 variable "cpu" {
   description = "Task CPU units for Fargate (e.g., 256, 512, 1024, 2048, 4096)."
   type        = number
-  default = 1024
+  default     = 1024
 
   validation {
     condition     = var.cpu > 0
@@ -45,7 +45,7 @@ variable "cpu" {
 variable "memory" {
   description = "Task memory (MiB) for Fargate (e.g., 512, 1024, 2048, 4096, etc.)."
   type        = number
-  default = 2048
+  default     = 2048
 
   validation {
     condition     = var.memory > 0
@@ -99,11 +99,11 @@ variable "efs_volumes_config" {
 # Container definitions
 
 variable "container_definitions" {
-    description = "A list of valid container definitions provided as a single valid JSON document"
-    type = string
+  description = "A list of valid container definitions provided as a single valid JSON document"
+  type        = string
 
-    validation {
-      condition     = can(jsondecode(var.container_definitions))
-      error_message = "container_definitions must be valid JSON."
-    }
+  validation {
+    condition     = can(jsondecode(var.container_definitions))
+    error_message = "container_definitions must be valid JSON."
+  }
 }

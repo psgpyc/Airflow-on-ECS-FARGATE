@@ -3,7 +3,7 @@
 
 resource "aws_cloudwatch_log_group" "ecs_fargate_cloudwatch_log_group" {
 
-  name              = "/ecs/${var.name}/airflow"
+  name = "/ecs/${var.name}/airflow"
 
   retention_in_days = 14
 
@@ -22,5 +22,5 @@ resource "aws_cloudwatch_log_group" "ecs_airflow_web_service_connect_log_group" 
   tags = {
     Name = var.service_connect_log_group_name
   }
-  
+
 }

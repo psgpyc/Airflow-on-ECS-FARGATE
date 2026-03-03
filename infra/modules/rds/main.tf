@@ -1,16 +1,16 @@
 resource "aws_db_subnet_group" "this" {
 
-    name = var.name
-    description = var.description
-    subnet_ids = var.subnet_ids
+  name        = var.name
+  description = var.description
+  subnet_ids  = var.subnet_ids
 
-    tags = merge(
-        var.tags, 
-        {
-            Name = var.name
-            Type = "RDS"
-        }
-    )
+  tags = merge(
+    var.tags,
+    {
+      Name = var.name
+      Type = "RDS"
+    }
+  )
 }
 
 resource "aws_db_instance" "this" {

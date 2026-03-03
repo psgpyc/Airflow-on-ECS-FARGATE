@@ -1,23 +1,23 @@
 resource "aws_ecr_repository" "this" {
 
-    name = "${var.name}/airflow"
+  name = "${var.name}/airflow"
 
-    # MUTABLE means tags (like :latest) can be overwritten.
-    # IMMUTABLE means once a tag is pushed, it cannot be changed.
-    image_tag_mutability = "MUTABLE"
+  # MUTABLE means tags (like :latest) can be overwritten.
+  # IMMUTABLE means once a tag is pushed, it cannot be changed.
+  image_tag_mutability = "MUTABLE"
 
-    # Venurability scanning when an image is pushed.
-    image_scanning_configuration {
-      scan_on_push = true
+  # Venurability scanning when an image is pushed.
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = var.name
     }
+  )
 
-    tags = merge(
-        var.tags, 
-        {
-            Name = var.name
-        }
-    )
-  
 }
 
 resource "aws_ecr_lifecycle_policy" "airflow_keep_last" {
@@ -41,5 +41,5 @@ resource "aws_ecr_lifecycle_policy" "airflow_keep_last" {
     ]
   })
 
-  depends_on = [ aws_ecr_repository.this ]
+  depends_on = [aws_ecr_repository.this]
 }

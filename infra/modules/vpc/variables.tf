@@ -46,21 +46,21 @@ variable "instance_tenancy" {
 
 variable "subnet_config" {
 
-    type = map(object({
-      cidr_block = string
-      availability_zone= string
-      type= string  # public or private
-      tags = optional(map(string), {})
-    }))
+  type = map(object({
+    cidr_block        = string
+    availability_zone = string
+    type              = string # public or private
+    tags              = optional(map(string), {})
+  }))
 
-    validation {
-      condition = alltrue([
-        for _, s in var.subnet_config:
+  validation {
+    condition = alltrue([
+      for _, s in var.subnet_config :
 
-            can(cidrnetmask(s.cidr_block)) && contains(["public", "private"], s.type)
+      can(cidrnetmask(s.cidr_block)) && contains(["public", "private"], s.type)
 
-      ])
-      error_message = "Each subnet must have a valid cidr_block and tier must be 'public' or 'private'"
-    }
-  
+    ])
+    error_message = "Each subnet must have a valid cidr_block and tier must be 'public' or 'private'"
+  }
+
 }
