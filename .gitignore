@@ -56,12 +56,7 @@ yarn-error.log*
 *.log
 
 
-# -------------------------------------------------------------------
-# Exception
-# -------------------------------------------------------------------
 
-!dataosphere/ci/
-!dataosphere/ci/profiles.yml
 
 
 # Local .terraform directories
@@ -99,3 +94,17 @@ override.tf.json
 
 # Generated files (optional)
 *.tf.json
+
+
+
+# -------------------------------------------------------------------
+# Exception
+# -------------------------------------------------------------------
+
+
+!**/envs/*.tfvars
+!**/envs/*.auto.tfvars
+
+# Also keep the folder itself
+!infra/env/
+!*/.terraform.lock.hcl
