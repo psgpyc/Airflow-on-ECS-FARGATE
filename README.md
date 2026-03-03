@@ -1,16 +1,25 @@
-![Terraform](https://img.shields.io/badge/Terraform-IaC-blue) 
+![Terraform CI](https://github.com/psgpyc/Airflow-on-ECS-FARGATE/actions/workflows/terraform.yml/badge.svg)  
+![Terraform](https://img.shields.io/badge/Terraform-1.11.3-623CE4?style=flat-square&logo=terraform&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-Fargate%20%7C%20RDS%20%7C%20EFS-FF9900?style=flat-square&logo=amazonaws&logoColor=white)
+![Airflow](https://img.shields.io/badge/Apache%20Airflow-3.1.7-017CEE?style=flat-square&logo=apacheairflow&logoColor=white)
+![CI/CD](https://img.shields.io/badge/GitHub%20Actions-OIDC%20Deploy-2088FF?style=flat-square&logo=githubactions&logoColor=white)
+
+> Live Airflow UI: [Airflow UI](http://aede-lb-13273499.eu-west-2.elb.amazonaws.com)
 
 # AEDE: Airflow on AWS ECS Fargate
 
 This repository is intentionally production-shaped.    
+    
 I set up Apache Airflow on AWS ECS Fargate with a secure network boundary, shared storage for DAGs/logs, and AWS-managed secrets — designed to be a stable foundation for running real pipelines.
 
 ## Architecture overview
 
 Airflow runs as ECS services in private subnets, fronted by an Application Load Balancer (ALB) for the web UI.      
-DAGs and logs are shared via EFS access points, and metadata is stored in RDS PostgreSQL.     
-Sensetive configuration and credentials are stored in Secrets Manager, with least-privilege access via IAM roles/policies.      
+    
+DAGs and logs are shared via EFS access points, and metadata is stored in RDS PostgreSQL.       
   
+Sensetive configuration and credentials are stored in Secrets Manager, with least-privilege access via IAM roles/policies.      
+    
 All infrastructure is provisioned using **Terraform**, with state stored remotely in **S3**.
 
 ### List of AWS Services:
