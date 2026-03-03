@@ -29,6 +29,11 @@ defaults:
 env:
   TF_VAR_FILE: envs/dev.auto.tfvars
   TF_PLAN_FILE: tfplan
+  TF_VAR_pg_master_password: ${{ secrets.PG_MASTER_PASSWORD }}
+  TF_VAR_airflow_admin_password: ${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
+  TF_VAR_airflow_api_auth_jwt_secret: ${{ secrets.AIRFLOW_API_AUTH_JWT_SECRET }}
+  TF_VAR_airflow_core_fernet_key: ${{ secrets.AIRFLOW_CORE_FERNET_KEY }}
+  TF_VAR_airflow_core_api_secret_key: ${{ secrets.AIRFLOW_CORE_API_SECRET_KEY }}
 
 jobs:
   plan:
@@ -63,18 +68,18 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           terraform plan -input=false \
-            -var-file="${{ env.TF_VAR_FILE }}" \
-            -var="pg_master_password=${{ secrets.PG_MASTER_PASSWORD }}" \
-            -var="airflow_admin_password=${{ secrets.AIRFLOW_ADMIN_PASSWORD }}"
+            -var-file="${{ env.TF_VAR_FILE }}" 
 
       - name: Plan (saved)
         if: github.event_name == 'push'
         run: |
           terraform plan -input=false \
             -var-file="${{ env.TF_VAR_FILE }}" \
-            -var="pg_master_password=${{ secrets.PG_MASTER_PASSWORD }}" \
-            -var="airflow_admin_password=${{ secrets.AIRFLOW_ADMIN_PASSWORD }}" \
             -out="${{ env.TF_PLAN_FILE }}"
+
+      - name: Verify plan file exists
+        if: github.event_name == 'push'
+        run: ls -lah
 
       - name: Upload plan artifact
         if: github.event_name == 'push'
@@ -84,6 +89,12 @@ jobs:
           path: infra/${{ env.TF_PLAN_FILE }}
           if-no-files-found: error
           retention-days: 7
+
+      - name: Debug plan file
+        if: github.event_name == 'push'
+        run: |
+          pwd
+          ls -lah
 
   apply:
     name: Terraform Apply 
