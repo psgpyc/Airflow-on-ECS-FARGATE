@@ -4,8 +4,6 @@
 ![Airflow](https://img.shields.io/badge/Apache%20Airflow-3.1.7-017CEE?style=flat-square&logo=apacheairflow&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/GitHub%20Actions-OIDC%20Deploy-2088FF?style=flat-square&logo=githubactions&logoColor=white)
 
-> **Live Airflow UI:** [http://aede-lb-13273499.eu-west-2.elb.amazonaws.com](http://aede-lb-13273499.eu-west-2.elb.amazonaws.com)
->
 > **Reviewing this repo?** Jump to the [reviewer guide](#how-to-review-this-repo)
 
 # AEDE: Apache Airflow on AWS ECS Fargate
